@@ -1,0 +1,63 @@
+<h2>How should the Wrapped presentation flow?</h2>
+<p class="subtitle">The core UX of the terminal experience</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Spotify-Style Slides (Auto-Advancing)</h3>
+      <p>One stat per screen, auto-advances every 3-4 seconds with smooth transitions. Spacebar to pause/resume, arrow keys to skip. Like watching a story unfold.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Most like actual Spotify Wrapped</li>
+          <li>Each stat gets its own dramatic reveal</li>
+          <li>Perfect for GIF export (plays like a video)</li>
+          <li>Simple mental model</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Can't linger on interesting stats easily</li>
+          <li>Linear — no random access</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Interactive TUI (Navigate Freely)</h3>
+      <p>Full Bubble Tea app — navigate between stat "cards" with arrow keys, tab between sections. More like a dashboard you explore.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>User controls the pace</li>
+          <li>Can revisit favorite stats</li>
+          <li>Feels like a polished app</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Less "wrapped" magic — more like a report</li>
+          <li>Harder to export as GIF (no natural flow)</li>
+          <li>More complex to build</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid: Auto-Play with Controls</h3>
+      <p>Starts as auto-advancing slides (like A), but you can press arrow keys to take manual control at any time. Press 'a' to resume auto-play. Best of both worlds.</p>
+      <div class="pros-cons">
+        <div class="pros"><h4>Pros</h4><ul>
+          <li>Dramatic reveals like Spotify Wrapped</li>
+          <li>User can pause and explore when curious</li>
+          <li>GIF export uses the auto-play path</li>
+          <li>Feels intentional and polished</li>
+        </ul></div>
+        <div class="cons"><h4>Cons</h4><ul>
+          <li>Slightly more complex state management</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+</div>

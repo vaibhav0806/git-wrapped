@@ -132,5 +132,6 @@ func rgbToHex(r, g, b uint8) string {
 
 // lerp linearly interpolates between a and b by t in [0,1].
 func lerp(a, b uint8, t float64) uint8 {
-	return uint8(float64(a) + t*float64(b-a))
+	// Use float64 arithmetic to avoid uint8 underflow when b < a.
+	return uint8(float64(a)*(1-t) + float64(b)*t)
 }

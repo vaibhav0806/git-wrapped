@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>dev-wrapped — Slide Lineup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #08080c;
+    color: #e0e0e0;
+    font-family: 'Inter', -apple-system, sans-serif;
+    padding: 48px 40px 80px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page-header {
+    max-width: 720px;
+    margin: 0 auto 56px;
+    text-align: center;
+  }
+
+  .page-header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 32px;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+    margin-bottom: 10px;
+  }
+
+  .page-header p {
+    color: #666;
+    font-size: 15px;
+    font-weight: 400;
+  }
+
+  .slides {
+    max-width: 720px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .slide-card {
+    background: #111118;
+    border: 1px solid #1e1e2a;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .slide-card:hover {
+    border-color: #2a2a3a;
+  }
+
+  .slide-header {
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid #1a1a24;
+  }
+
+  .slide-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+
+  .slide-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #555;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .slide-body {
+    padding: 24px;
+  }
+
+  .slide-body h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    letter-spacing: -0.3px;
+  }
+
+  .slide-body .desc {
+    color: #888;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+
+  /* Terminal mockup */
+  .terminal {
+    background: #0a0a10;
+    border: 1px solid #1a1a24;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .terminal-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: #0f0f18;
+    border-bottom: 1px solid #1a1a24;
+  }
+
+  .terminal-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .terminal-dot.r { background: #ff5f57; }
+  .terminal-dot.y { background: #febc2e; }
+  .terminal-dot.g { background: #28c840; }
+
+  .terminal-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: #444;
+    margin-left: 8px;
+  }
+
+  .terminal-content {
+    padding: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  /* Color themes per slide */
+  .theme-red .slide-num { background: #2a1019; color: #ff6b6b; }
+  .theme-red h3 { color: #ff6b6b; }
+
+  .theme-yellow .slide-num { background: #2a2410; color: #feca57; }
+  .theme-yellow h3 { color: #feca57; }
+
+  .theme-green .slide-num { background: #0a2a18; color: #0be881; }
+  .theme-green h3 { color: #0be881; }
+
+  .theme-crimson .slide-num { background: #2a0a14; color: #ff4757; }
+  .theme-crimson h3 { color: #ff4757; }
+
+  .theme-purple .slide-num { background: #1a1030; color: #a29bfe; }
+  .theme-purple h3 { color: #a29bfe; }
+
+  .theme-cyan .slide-num { background: #0a1e2a; color: #48dbfb; }
+  .theme-cyan h3 { color: #48dbfb; }
+
+  .theme-pink .slide-num { background: #2a1028; color: #ff9ff3; }
+  .theme-pink h3 { color: #ff9ff3; }
+
+  .theme-gradient .slide-num {
+    background: linear-gradient(135deg, #2a1019, #1a1030, #0a1e2a);
+    color: #fff;
+  }
+  .theme-gradient h3 {
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Terminal text helpers */
+  .t-dim { color: #444; }
+  .t-muted { color: #666; }
+  .t-sub { color: #888; }
+  .t-red { color: #ff6b6b; }
+  .t-yellow { color: #feca57; }
+  .t-green { color: #0be881; }
+  .t-cyan { color: #48dbfb; }
+  .t-purple { color: #a29bfe; }
+  .t-pink { color: #ff9ff3; }
+  .t-crimson { color: #ff4757; }
+  .t-white { color: #e8e8e8; }
+  .t-bold { font-weight: 700; }
+  .t-big { font-size: 22px; }
+  .t-huge { font-size: 28px; }
+  .t-small { font-size: 11px; }
+  .t-center { text-align: center; }
+  .t-italic { font-style: italic; }
+  .t-spacing { letter-spacing: 3px; }
+
+  .t-gradient {
+    font-weight: 800;
+    background: linear-gradient(90deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 3px 0;
+  }
+
+  .bar-label {
+    width: 56px;
+    text-align: right;
+    color: #666;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .bar-track {
+    flex: 1;
+    height: 16px;
+    background: #141420;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  .bar-val {
+    width: 36px;
+    text-align: right;
+    color: #555;
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    text-align: center;
+  }
+
+  .stat-box {
+    padding: 12px 8px;
+    background: #0d0d16;
+    border-radius: 8px;
+    border: 1px solid #1a1a24;
+  }
+
+  .stat-val {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    color: #555;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .divider {
+    height: 1px;
+    background: #1a1a24;
+    margin: 16px 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>The Slides</h1>
+  <p>10 full-screen terminal cards, each with its own color and vibe</p>
+</div>
+
+<div class="slides">
+
+  <!-- SLIDE 1: Title Card -->
+  <div class="slide-card theme-gradient">
+    <div class="slide-header">
+      <span class="slide-num">01</span>
+      <span class="slide-label">The Opening</span>
+    </div>
+    <div class="slide-body">
+      <h3>Title Card</h3>
+      <p class="desc">Big animated title with gradient text. The username fades in below. A loading spinner plays while we fetch data from GitHub's API in the background.</p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">gh-wrapped</span>
+        </div>
+        <div class="terminal-content t-center" style="padding: 40px 20px;">
+          <div class="t-dim t-small">~ ~ ~</div>
+          <div style="margin: 16px 0;">
+            <span class="t-gradient t-huge">DEV WRAPPED 2025</span>
+          </div>
+          <div class="t-sub" style="margin-top: 8px;">@octocat</div>
+          <div class="t-dim t-small" style="margin-top: 16px;">~ ~ ~</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: Year in Numbers -->
+  <div class="slide-card theme-yellow">
+    <div class="slide-header">
+      <span class="slide-num">02</span>
+      <span class="slide-label">The Overview</span>
+    </div>
+    <div class="slide-body">
+      <h3>Your Year in Numbers</h3>
+      <p class="desc">Counters tick up from zero like a slot machine. Each number lands with a satisfying snap. The big picture of your year in one glance.</p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">gh-wrapped</span>
+        </div>
+        <div class="terminal-content" style="padding: 28px 20px;">
+          <div class="t-center t-small t-spacing t-muted" style="margin-bottom: 24px;">YOUR YEAR IN NUMBERS</div>
+          <div class="stat-grid">
+            <div class="stat-box">
+              <div class="stat-val t-yellow">1,247</div>
+              <div class="stat-label">Commits</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val t-cyan">83</div>
+              <div class="stat-label">PRs Merged</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val t-green">142</div>
+              <div class="stat-label">Issues Closed</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val t-purple">38</div>
+              <div class="stat-label">PRs Reviewed</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val t-pink">12</div>
+              <div class="stat-label">Repos</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val t-red">847</div>
+              <div class="stat-label">Stars Earned</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Contribution Heatmap -->
+  <div class="slide-card theme-green">
+    <div class="slide-header">
+      <span class="slide-num">03</span>
+      <span class="slide-label">The Map</span>
+    </div>
+    <div class="slide-body">
+      <h3>Contribution Heatmap</h3>
+      <p class="desc">Your GitHub contribution graph, but rendered in the terminal with block characters. Cells fill in left-to-right with animation. Your longest streak gets highlighted.</p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">gh-wrapped</span>
+        </div>
+        <div class="terminal-content" style="padding: 24px 20px; font-size: 11px; line-height: 1.5;">
+          <div class="t-center t-small t-spacing t-muted" style="margin-bottom: 16px;">YOUR CONTRIBUTION MAP</div>
+          <div style="color: #0be881; opacity: 0.3;">░░░▓▓░░░░░░▓░░░▓▓▓░░░░░░▓▓░░░░░▓▓░░▓▓▓░░░░░▓▓░░░░░░░</div>
+          <div style="color: #0be881; opacity: 0.4;">░░▓▓▓▓░░░░▓▓░░▓▓░░░░▓▓░░░▓▓░░░▓░░░░▓▓▓░░░░▓▓▓░░░░░▓▓</div>
+          <div style="color: #0be881; opacity: 0.5;">░▓▓▓▓▓▓░░▓▓▓░▓▓▓░░▓▓▓▓░▓▓▓░░▓▓░░▓▓▓▓▓░░▓▓▓▓▓░░░▓▓▓▓</div>
+          <div style="color: #0be881; opacity: 0.7;">▓▓████▓▓▓▓▓▓▓▓██▓▓▓████▓▓██▓▓▓▓▓▓▓▓████▓▓▓████▓▓▓▓▓██</div>
+          <div style="color: #0be881; opacity: 0.6;">░▓▓██▓▓░▓▓▓▓░▓▓▓▓░▓▓██▓░▓▓▓░░▓▓░░▓▓██▓░░▓▓██▓▓░▓▓▓▓</div>
+          <div style="color: #0be881; opacity: 0.4;">░░▓▓▓░░░░▓▓░░▓▓░░░░▓▓░░░░▓░░░░░░░░▓▓▓░░░░▓▓▓░░░░▓▓░</div>
+          <div style="color: #0be881; opacity: 0.3;">░░░▓░░░░░░░░░░▓░░░░░▓░░░░░░░░░░░░░░░▓░░░░░░▓░░░░░░▓░</div>
+          <div class="divider"></div>
+          <div class="t-center">
+            <span class="t-green t-bold">23-day streak</span>
+            <span class="t-sub"> in March — your longest run</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: Most Chaotic Day -->
+  <div class="slide-card theme-red">
+    <div class="slide-header">
+      <span class="slide-num">04</span>
+      <span class="slide-label">The Chaos</span>
+    </div>
+    <div class="slide-body">
+      <h3>Your Most Chaotic Day</h3>
+      <p class="desc">The day you went absolutely feral. Big dramatic number, the date, and a snarky one-liner. The background pulses red.</p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">gh-wrapped</span>
+        </div>
+        <div class="terminal-content t-center" style="padding: 36px 20px;">
+          <div class="t-small t-spacing t-muted">YOUR MOST CHAOTIC DAY</div>
+          <div class="t-white t-bold" style="font-size: 18px; margin: 16px 0 8px;">March 14, 2025</div>
+          <div class="t-red t-bold" style="font-size: 36px; line-height: 1;">47</div>
+          <div class="t-red t-small t-spacing" style="margin-top: 4px;">CONTRIBUTIONS</div>
+          <div class="divider" style="max-width: 200px; margin: 20px auto;"></div>
+          <div class="t-sub t-italic t-small">"were you okay?"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Night Owl vs Early Bird -->
+  <div class="slide-card theme-purple">
+    <div class="slide-header">
+      <span class="slide-num">05</span>
+      <span class="slide-label">The Clock</span>
+    </div>
+    <div class="slide-body">
+      <h3>Night Owl or Early Bird?</h3>
+      <p class="desc">When you actually code. Horizontal bars show your commit distribution across 4 time blocks. You get crowned with a personality — Night Owl, Early Bird, or 9-to-5er.</p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">gh-wrapped</span>
+        </div>
+        <div class="terminal-content" style="padding: 28px 20px;">
+          <div class="t-center t-small t-spacing t-muted" style="margin-bottom: 20px;">WHEN YOU CODE</div>
+          <div class="bar-row">
+            <span class="bar-label t-sub">06–12</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 12%; background: #a29bfe; opacity: 0.5;"></div></div>
+            <span class="bar-val t-sub">12%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label t-sub">12–18</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 35%; background: #a29bfe; opacity: 0.7;"></div></div>
+            <span class="bar-val t-sub">35%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label t-sub">18–00</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 41%; background: #a29bfe;"></div></div>
+            <span class="bar-val t-white t-bold">41%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label t-sub">00–06</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 12%; background: #a29bfe; opacity: 0.4;"></div></div>
+            <span class="bar-val t-sub">12%</span>
+          </div>
+          <div class="divider"></div>
+          <div class="t-center t-purple t-bold" style="font-size: 18px;">Night Owl</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: Top Languages -->
+  <div class="slide-card theme-cyan">
+    <div class="slide-header">
+      <span class="slide-num">06</span>
+      <span class="slide-label">The Stack</span>
+    </div>
+    <div class="slide-body">
+      <h3>Your Top Languages</h3>
+      <p class="desc">Languages ranked by repo activity, each in its actual GitHub color. A fun subtitle based on your distribution — "Go purist", "Polyglot energy", etc.</p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">gh-wrapped</span>
+        </div>
+        <div class="terminal-content" style="padding: 28px 20px;">
+          <div class="t-center t-small t-spacing t-muted" style="margin-bottom: 20px;">YOUR TOP LANGUAGES</div>
+          <div class="bar-row">
+            <span class="bar-label" style="color: #00ADD8;">Go</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 42%; background: #00ADD8;"></div></div>
+            <span class="bar-val" style="color: #00ADD8;">42%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label" style="color: #f1e05a;">JS</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 28%; background: #f1e05a;"></div></div>
+            <span class="bar-val" style="color: #f1e05a;">28%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label" style="color: #3572A5;">Python</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 18%; background: #3572A5;"></div></div>
+            <span class="bar-val" style="color: #3572A5;">18%</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label" style="color: #dea584;">Rust</span>
+            <div class="bar-track"><div class="bar-fill" style="width: 12%; background: #dea584;"></div></div>
+            <span class="bar-val" style="color: #dea584;">12%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: Villain Arc -->
+  <div class="slide-card theme-crimson">
+    <div class="slide-header">
+      <span class="slide-num">07</span>
+      <span class="slide-label">The Villain Arc</span>
+    </div>
+    <div class="slide-body">
+      <h3>Your Villain Arc</h3>
+      <p class="desc">The repo where you deleted the most code. Dramatic red number, menacing energy. "You mass-deleted 4,200 lines from legacy-api. No regrets?"</p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">gh-wrapped</span>
+        </div>
+        <div class="terminal-content t-center" style="padding: 36px 20px;">
+          <div class="t-small t-spacing" style="color: #ff4757;">VILLAIN ARC</div>
+          <div style="font-size: 40px; font-weight: 800; color: #ff4757; margin: 16px 0 4px; line-height: 1;">−4,200</div>
+          <div class="t-small t-spacing" style="color: #ff4757; opacity: 0.7;">LINES DELETED</div>
+          <div style="margin-top: 16px;">
+            <span class="t-sub">from </span><span class="t-white t-bold">legacy-api</span>
+          </div>
+          <div class="divider" style="max-width: 200px; margin: 20px auto;"></div>
+          <div class="t-sub t-italic t-small">"no regrets?"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: Weekend Warrior -->
+  <div class="slide-card theme-pink">
+    <div class="slide-header">
+      <span class="slide-num">08</span>
+      <span class="slide-label">The Schedule</span>
+    </div>
+    <div class="slide-body">
+      <h3>Weekend Warrior Score</h3>
+      <p class="desc">What % of your activity lands on weekends. A split bar visualizes the ratio. Snarky verdict: >30% = "You don't believe in work-life balance." <10% = "Touch grass? Already on it."</p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">gh-wrapped</span>
+        </div>
+        <div class="terminal-content t-center" style="padding: 32px 20px;">
+          <div class="t-small t-spacing t-muted" style="margin-bottom: 20px;">WEEKEND WARRIOR SCORE</div>
+          <div style="display: flex; border-radius: 8px; overflow: hidden; height: 32px; max-width: 400px; margin: 0 auto;">
+            <div style="width: 67%; background: #1a1a2a; display: flex; align-items: center; justify-content: center;">
+              <span class="t-sub t-small">weekdays 67%</span>
+            </div>
+            <div style="width: 33%; background: #ff9ff3; display: flex; align-items: center; justify-content: center;">
+              <span style="color: #1a1a2e; font-size: 12px; font-weight: 600;">33%</span>
+            </div>
+          </div>
+          <div class="divider" style="max-width: 200px; margin: 20px auto;"></div>
+          <div class="t-pink t-bold" style="font-size: 16px;">"work-life balance is a myth"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: The Novel -->
+  <div class="slide-card theme-yellow">
+    <div class="slide-header">
+      <span class="slide-num">09</span>
+      <span class="slide-label">The Novel</span>
+    </div>
+    <div class="slide-body">
+      <h3>Your Longest Commit Message</h3>
+      <p class="desc">The actual message, scrolling or typewriter-style. Shows the repo, the character count. "That's not a commit message, that's a blog post."</p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">gh-wrapped</span>
+        </div>
+        <div class="terminal-content" style="padding: 28px 20px;">
+          <div class="t-center t-small t-spacing t-muted" style="margin-bottom: 20px;">YOUR LONGEST COMMIT MESSAGE</div>
+          <div style="background: #0d0d16; border: 1px solid #1a1a24; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
+            <div class="t-yellow" style="font-size: 13px; line-height: 1.6;">refactor: completely overhaul the authentication middleware to support OAuth2 PKCE flow, migrate session storage from cookies to encrypted JWTs, update all downstream services to validate tokens against the new JWKS endpoint, and add comprehensive integration tests for the entire auth pipeline including edge cases around token refresh, session expiry, and concurrent requests from multiple devices...</div>
+          </div>
+          <div class="t-center">
+            <span class="t-yellow t-bold">847 characters</span>
+            <span class="t-sub"> in </span>
+            <span class="t-white">auth-service</span>
+          </div>
+          <div class="t-center t-sub t-italic t-small" style="margin-top: 8px;">"that's not a commit message, that's a blog post"</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 10: Developer Personality -->
+  <div class="slide-card theme-gradient">
+    <div class="slide-header">
+      <span class="slide-num">10</span>
+      <span class="slide-label">The Finale</span>
+    </div>
+    <div class="slide-body">
+      <h3>Your Developer Personality</h3>
+      <p class="desc">The grand finale. An archetype based on all your stats — "The Nightcrawler", "The Destroyer", "The Machine", "The Socialite." Big gradient text reveal, your top 3 traits, and a prompt to export as GIF.</p>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot r"></div>
+          <div class="terminal-dot y"></div>
+          <div class="terminal-dot g"></div>
+          <span class="terminal-title">gh-wrapped</span>
+        </div>
+        <div class="terminal-content t-center" style="padding: 40px 20px;">
+          <div class="t-dim t-small">you are</div>
+          <div style="margin: 16px 0;">
+            <span class="t-gradient" style="font-size: 32px; letter-spacing: -0.5px;">THE NIGHTCRAWLER</span>
+          </div>
+          <div style="display: flex; justify-content: center; gap: 12px; margin: 16px 0;">
+            <span style="background: #1a1028; color: #a29bfe; padding: 4px 12px; border-radius: 20px; font-size: 11px;">night owl</span>
+            <span style="background: #0a2a18; color: #0be881; padding: 4px 12px; border-radius: 20px; font-size: 11px;">long streaks</span>
+            <span style="background: #2a1028; color: #ff9ff3; padding: 4px 12px; border-radius: 20px; font-size: 11px;">weekend warrior</span>
+          </div>
+          <div class="divider" style="max-width: 200px; margin: 24px auto;"></div>
+          <div class="t-sub t-small">Your 2025, Unwrapped.</div>
+          <div class="t-cyan t-small" style="margin-top: 12px;">press <span style="background: #0a1e2a; padding: 2px 8px; border-radius: 4px; border: 1px solid #1a2a3a;">g</span> to export as GIF</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

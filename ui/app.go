@@ -46,7 +46,7 @@ func NewModel(stats github.Stats, auto bool) Model {
 		slides:   slides,
 		current:  0,
 		anim:     NewAnimState(AnimDurationMs, AnimIntervalMs),
-		autoPlay: auto,
+		autoPlay: true,
 		autoMode: auto,
 	}
 }

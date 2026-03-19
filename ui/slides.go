@@ -159,9 +159,9 @@ func renderNumbers(s github.Stats, anim AnimState, width int) string {
 func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 	progress := anim.Progress()
 
-	// Heatmap characters by contribution level.
-	levelChars := []rune{'░', '▒', '▓', '█'}
-	levelColors := []lipgloss.Color{ColorDim, ColorGreen, ColorGreen, ColorCyan}
+	// Heatmap characters by display intensity (0-4).
+	levelChars := []rune{' ', '░', '▒', '▓', '█'}
+	levelColors := []lipgloss.Color{ColorDim, ColorDim, ColorGreen, ColorGreen, ColorCyan}
 
 	// Determine how many cells to reveal.
 	totalCells := len(s.Calendar)
@@ -171,7 +171,6 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 	title = TitleStyle.Width(width).Render(title)
 
 	// Render calendar grid — 53 weeks wide, up to 7 rows tall.
-	// Each cell is 2 characters wide for readability.
 	cols := 53
 	var gridLines []string
 	for row := 0; row < 7; row++ {
@@ -187,15 +186,28 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 				continue
 			}
 			day := s.Calendar[idx]
-			level := day.Level
-			if level < 0 {
-				level = 0
+			// Derive display level from Count when Level is 0 but Count > 0.
+			displayLevel := day.Level
+			if displayLevel == 0 && day.Count > 0 {
+				switch {
+				case day.Count >= 20:
+					displayLevel = 4
+				case day.Count >= 10:
+					displayLevel = 3
+				case day.Count >= 5:
+					displayLevel = 2
+				default:
+					displayLevel = 1
+				}
 			}
-			if level > 3 {
-				level = 3
+			if displayLevel < 0 {
+				displayLevel = 0
 			}
-			ch := string(levelChars[level])
-			color := levelColors[level]
+			if displayLevel > 4 {
+				displayLevel = 4
+			}
+			ch := string(levelChars[displayLevel])
+			color := levelColors[displayLevel]
 			rowSb.WriteString(lipgloss.NewStyle().Foreground(color).Render(ch + " "))
 		}
 		gridLines = append(gridLines, lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(rowSb.String()))
