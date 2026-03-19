@@ -716,85 +716,107 @@ func renderNovel(s github.Stats, anim AnimState, width int) string {
 // Slide 10: Developer Personality (Finale)
 // ---------------------------------------------------------------------------
 
+// All archetype names for the lottery effect.
+var allArchetypes = []string{
+	"The Nightcrawler",
+	"The Obsessed",
+	"The Novelist",
+	"The Polyglot",
+	"The Specialist",
+	"The Machine",
+	"The Weekender",
+	"The Sprinter",
+}
+
 func renderPersonality(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	// "you are" label
+	// Lottery phases:
+	// 0.0 - 0.6: rapid cycling through archetype names (slot machine)
+	// 0.6 - 0.7: land on the final archetype
+	// 0.7 - 1.0: reveal description + outro
+
 	label := dim("you are")
 
-	// BIG archetype name
-	archetype := TypewriterAnimation(s.Archetype, p)
-	archetypeName := strings.ToUpper(archetype)
-	archetypeStyled := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#0d1117")).
-		Background(ColorCyan).
-		Bold(true).
-		Padding(0, 3).
-		Render(" " + archetypeName + " ")
+	var displayName string
+	var nameStyle lipgloss.Style
+	landed := false
 
-	// Archetype description
+	if p < 0.6 {
+		// Cycling phase — pick a name based on tick count
+		// Slow down as we approach 0.6 (fewer changes per tick)
+		cycleSpeed := 1 + int((1.0-p/0.6)*5) // 6 down to 1
+		idx := (anim.Tick / cycleSpeed) % len(allArchetypes)
+		displayName = strings.ToUpper(allArchetypes[idx])
+		// Dim cycling names
+		nameStyle = lipgloss.NewStyle().
+			Foreground(ColorDim).
+			Bold(true)
+	} else {
+		// Landed on final archetype
+		displayName = strings.ToUpper(s.Archetype)
+		nameStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("#0d1117")).
+			Background(ColorCyan).
+			Bold(true).
+			Padding(0, 3)
+		landed = true
+	}
+
+	archetypeStyled := nameStyle.Render(" " + displayName + " ")
+
+	// Description (only after landing)
 	archetypeDesc := ""
-	if p > 0.3 {
+	if landed && p > 0.75 {
 		archetypeDesc = italic(s.ArchetypeDescription)
 	}
 
-	// Trait list with descriptions
+	// Trait pills (only after description)
 	pillDefs := [3]struct{ fg, bg lipgloss.Color }{
 		{lipgloss.Color("#0d1117"), ColorPurple},
 		{lipgloss.Color("#0d1117"), ColorPink},
 		{lipgloss.Color("#0d1117"), ColorCyan},
 	}
-
-	var traitLines []string
-	for i, trait := range s.Traits {
-		t := TypewriterAnimation(trait, p)
-		if t == "" {
-			continue
+	pillRow := ""
+	if landed && p > 0.85 {
+		var pills []string
+		for i, trait := range s.Traits {
+			if trait == "" {
+				continue
+			}
+			name := strings.TrimPrefix(trait, "The ")
+			pills = append(pills, pill(" "+strings.ToLower(name)+" ", pillDefs[i].fg, pillDefs[i].bg))
 		}
-		name := strings.TrimPrefix(t, "The ")
-		traitPill := pill(" "+strings.ToLower(name)+" ", pillDefs[i].fg, pillDefs[i].bg)
-		desc := ""
-		if p > 0.5 && s.TraitDescriptions[i] != "" {
-			desc = "  " + dim(s.TraitDescriptions[i])
-		}
-		traitLines = append(traitLines, traitPill+desc)
+		pillRow = strings.Join(pills, "  ")
 	}
 
-	outro := muted("Your " + s.YearLabel + ", Unwrapped.")
-
-	gifBox := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#21262d")).
-		Padding(0, 2).
-		Render(
-			dim("press ") + bold("g", ColorCyan) + dim(" to export as GIF"),
-		)
-
-	inner := strings.Join([]string{
-		"",
-		label,
-		"",
-		archetypeStyled,
-		archetypeDesc,
-		"",
-		divider(50),
-		"",
-	}, "\n")
-
-	// Add trait lines
-	for _, tl := range traitLines {
-		inner += tl + "\n"
+	// Outro + GIF hint (only after fully revealed)
+	outro := ""
+	gifBox := ""
+	if landed && p > 0.9 {
+		outro = muted("Your " + s.YearLabel + ", Unwrapped.")
+		gifBox = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#21262d")).
+			Padding(0, 2).
+			Render(
+				dim("press ") + bold("g", ColorCyan) + dim(" to export as GIF"),
+			)
 	}
 
-	inner += strings.Join([]string{
-		"",
-		divider(50),
-		"",
-		outro,
-		"",
-		gifBox,
-		"",
-	}, "\n")
+	var parts []string
+	parts = append(parts, "", "", label, "", archetypeStyled)
+	if archetypeDesc != "" {
+		parts = append(parts, archetypeDesc)
+	}
+	if pillRow != "" {
+		parts = append(parts, "", pillRow)
+	}
+	if outro != "" {
+		parts = append(parts, "", divider(50), "", outro, "", gifBox)
+	}
+	parts = append(parts, "", "")
 
+	inner := strings.Join(parts, "\n")
 	return panel(inner, ColorCyan, width)
 }
