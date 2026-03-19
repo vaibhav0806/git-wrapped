@@ -12,55 +12,44 @@ import (
 type SlideID int
 
 const (
-	SlideTitle       SlideID = iota // 0
-	SlideNumbers                    // 1
-	SlideHeatmap                    // 2
-	SlideChaos                      // 3
-	SlideClock                      // 4
-	SlideLanguages                  // 5
-	SlideVillain                    // 6
-	SlideWeekend                    // 7
-	SlideNovel                      // 8
-	SlidePersonality                // 9
+	SlideTitle       SlideID = iota
+	SlideNumbers
+	SlideHeatmap
+	SlideChaos
+	SlideClock
+	SlideLanguages
+	SlideVillain
+	SlideWeekend
+	SlideNovel
+	SlidePersonality
 )
 
 // ActiveSlides returns the ordered list of slides that have enough data to show.
 func ActiveSlides(s github.Stats) []SlideID {
 	slides := []SlideID{SlideTitle}
-
 	if s.HasCalendar {
-		slides = append(slides, SlideNumbers)
-		slides = append(slides, SlideHeatmap)
-		slides = append(slides, SlideChaos)
+		slides = append(slides, SlideNumbers, SlideHeatmap, SlideChaos)
 	}
-
 	if s.TimeBlocks[0]+s.TimeBlocks[1]+s.TimeBlocks[2]+s.TimeBlocks[3] > 0 {
 		slides = append(slides, SlideClock)
 	}
-
 	if len(s.Languages) > 0 {
 		slides = append(slides, SlideLanguages)
 	}
-
 	if s.VillainCommits > 0 {
 		slides = append(slides, SlideVillain)
 	}
-
 	if s.HasCalendar {
 		slides = append(slides, SlideWeekend)
 	}
-
 	if s.LongestMessage != "" {
 		slides = append(slides, SlideNovel)
 	}
-
 	slides = append(slides, SlidePersonality)
-
 	return slides
 }
 
-// RenderSlide dispatches to the appropriate render function and centers the
-// content vertically within the given terminal dimensions.
+// RenderSlide renders a slide centered in a panel.
 func RenderSlide(id SlideID, s github.Stats, anim AnimState, width, height int) string {
 	var content string
 	switch id {
@@ -84,420 +73,82 @@ func RenderSlide(id SlideID, s github.Stats, anim AnimState, width, height int) 
 		content = renderNovel(s, anim, width)
 	case SlidePersonality:
 		content = renderPersonality(s, anim, width)
-	default:
-		content = ""
 	}
 
-	// Center vertically.
+	// Center vertically
 	lines := strings.Split(content, "\n")
-	contentHeight := len(lines)
-	paddingTop := (height - contentHeight) / 2
-	if paddingTop < 0 {
-		paddingTop = 0
+	padTop := (height - len(lines)) / 2
+	if padTop < 0 {
+		padTop = 0
 	}
-	var sb strings.Builder
-	for i := 0; i < paddingTop; i++ {
-		sb.WriteByte('\n')
-	}
-	sb.WriteString(content)
-	return sb.String()
-}
-
-// ---------------------------------------------------------------------------
-// Individual slide renderers
-// ---------------------------------------------------------------------------
-
-func renderTitle(s github.Stats, anim AnimState, width int) string {
-	progress := anim.Progress()
-
-	heading := GradientText(fmt.Sprintf("DEV WRAPPED %s", s.YearLabel), ColorRed, ColorCyan)
-	heading = TitleStyle.Width(width).Render(heading)
-
-	handle := TypewriterAnimation(fmt.Sprintf("@%s", s.Username), progress)
-	handle = SubtitleStyle.Width(width).Render(handle)
-
-	footnote := FootnoteStyle.Width(width).Render("your year in code")
-
-	return strings.Join([]string{
-		"",
-		heading,
-		"",
-		handle,
-		"",
-		footnote,
-	}, "\n")
-}
-
-func renderNumbers(s github.Stats, anim AnimState, width int) string {
-	progress := anim.Progress()
-
-	contribs := CounterAnimation(s.TotalContributions, progress)
-	repos := CounterAnimation(s.TotalRepos, progress)
-	stars := CounterAnimation(s.TotalStars, progress)
-
-	title := GradientText("YEAR IN NUMBERS", ColorPurple, ColorCyan)
-	title = TitleStyle.Width(width).Render(title)
-
-	numberStyle := BigNumberStyle.Width(width)
-	labelStyle := LabelStyle.Width(width)
-
-	return strings.Join([]string{
-		"",
-		title,
-		"",
-		numberStyle.Foreground(ColorCyan).Render(fmt.Sprintf("%d", contribs)),
-		labelStyle.Render("contributions"),
-		"",
-		numberStyle.Foreground(ColorPurple).Render(fmt.Sprintf("%d", repos)),
-		labelStyle.Render("repositories"),
-		"",
-		numberStyle.Foreground(ColorGreen).Render(fmt.Sprintf("%d", stars)),
-		labelStyle.Render("stars earned"),
-	}, "\n")
-}
-
-func renderHeatmap(s github.Stats, anim AnimState, width int) string {
-	progress := anim.Progress()
-
-	// Heatmap characters by display intensity (0-4).
-	levelChars := []rune{' ', '░', '▒', '▓', '█'}
-	levelColors := []lipgloss.Color{ColorDim, ColorDim, ColorGreen, ColorGreen, ColorCyan}
-
-	// Determine how many cells to reveal.
-	totalCells := len(s.Calendar)
-	revealed := HeatmapAnimation(totalCells, progress)
-
-	title := GradientText("CONTRIBUTION HEATMAP", ColorGreen, ColorCyan)
-	title = TitleStyle.Width(width).Render(title)
-
-	// Render calendar grid — 53 weeks wide, up to 7 rows tall.
-	cols := 53
-	var gridLines []string
-	for row := 0; row < 7; row++ {
-		var rowSb strings.Builder
-		for col := 0; col < cols; col++ {
-			idx := row*cols + col
-			if idx >= totalCells {
-				rowSb.WriteString("  ")
-				continue
-			}
-			if idx >= revealed {
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(ColorDim).Render("░ "))
-				continue
-			}
-			day := s.Calendar[idx]
-			// Derive display level from Count when Level is 0 but Count > 0.
-			displayLevel := day.Level
-			if displayLevel == 0 && day.Count > 0 {
-				switch {
-				case day.Count >= 20:
-					displayLevel = 4
-				case day.Count >= 10:
-					displayLevel = 3
-				case day.Count >= 5:
-					displayLevel = 2
-				default:
-					displayLevel = 1
-				}
-			}
-			if displayLevel < 0 {
-				displayLevel = 0
-			}
-			if displayLevel > 4 {
-				displayLevel = 4
-			}
-			ch := string(levelChars[displayLevel])
-			color := levelColors[displayLevel]
-			rowSb.WriteString(lipgloss.NewStyle().Foreground(color).Render(ch + " "))
-		}
-		gridLines = append(gridLines, lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(rowSb.String()))
-	}
-
-	streakLine := ""
-	if s.LongestStreak > 0 {
-		streakLine = SubtitleStyle.Width(width).Render(
-			fmt.Sprintf("longest streak: %d days  %s → %s",
-				s.LongestStreak,
-				s.StreakStart.Format("Jan 2"),
-				s.StreakEnd.Format("Jan 2"),
-			),
-		)
-	}
-
-	parts := []string{"", title, ""}
-	parts = append(parts, gridLines...)
-	parts = append(parts, "", streakLine)
-	return strings.Join(parts, "\n")
-}
-
-func renderChaos(s github.Stats, anim AnimState, width int) string {
-	progress := anim.Progress()
-
-	quotes := []string{
-		"someone had a deadline.",
-		"chaos is a ladder.",
-		"we don't talk about this day.",
-		"absolutely unhinged behavior.",
-		"the git log doesn't lie.",
-	}
-	// Pick a deterministic quote from the busiest date.
-	quoteIdx := s.BusiestDate.Day() % len(quotes)
-	quote := quotes[quoteIdx]
-
-	title := GradientText("MOST CHAOTIC DAY", ColorYellow, ColorRed)
-	title = TitleStyle.Width(width).Render(title)
-
-	dateStr := TypewriterAnimation(s.BusiestDate.Format("Monday, Jan 2"), progress)
-	dateRendered := BigNumberStyle.Width(width).Foreground(ColorYellow).Render(dateStr)
-
-	countStr := fmt.Sprintf("%d contributions", CounterAnimation(s.BusiestCount, progress))
-	countRendered := BigNumberStyle.Width(width).Foreground(ColorRed).Render(countStr)
-
-	quoteRendered := FootnoteStyle.Width(width).Render(fmt.Sprintf("« %s »", quote))
-
-	return strings.Join([]string{
-		"",
-		title,
-		"",
-		dateRendered,
-		"",
-		countRendered,
-		"",
-		quoteRendered,
-	}, "\n")
-}
-
-func renderClock(s github.Stats, anim AnimState, width int) string {
-	progress := anim.Progress()
-
-	title := GradientText("WHEN YOU CODE", ColorPink, ColorPurple)
-	title = TitleStyle.Width(width).Render(title)
-
-	labels := [4]string{"Morning (6-12)", "Afternoon (12-18)", "Evening (18-24)", "Night (0-6)"}
-	colors := [4]lipgloss.Color{ColorYellow, ColorCyan, ColorPurple, ColorPink}
-
-	// Find max for normalization.
-	maxVal := 1
-	for _, v := range s.TimeBlocks {
-		if v > maxVal {
-			maxVal = v
-		}
-	}
-
-	barAreaWidth := width / 2
-	if barAreaWidth < 10 {
-		barAreaWidth = 10
-	}
-
-	var rows []string
-	for i, count := range s.TimeBlocks {
-		animated := CounterAnimation(count, progress)
-		filledWidth := 0
-		if maxVal > 0 {
-			filledWidth = int(float64(barAreaWidth) * float64(animated) / float64(maxVal))
-		}
-		emptyWidth := barAreaWidth - filledWidth
-
-		bar := RenderBar(filledWidth, colors[i]) + RenderBarEmpty(emptyWidth)
-		label := LabelStyle.Render(fmt.Sprintf("%-18s %4d", labels[i], animated))
-		row := lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(bar + "  " + label)
-		rows = append(rows, row)
-	}
-
-	verdict := SubtitleStyle.Width(width).Render(s.TimeLabel)
-
-	parts := []string{"", title, ""}
-	parts = append(parts, rows...)
-	parts = append(parts, "", verdict)
-	return strings.Join(parts, "\n")
-}
-
-func renderLanguages(s github.Stats, anim AnimState, width int) string {
-	progress := anim.Progress()
-
-	title := GradientText("TOP LANGUAGES", ColorRed, ColorYellow)
-	title = TitleStyle.Width(width).Render(title)
-
-	barAreaWidth := width / 2
-	if barAreaWidth < 10 {
-		barAreaWidth = 10
-	}
-
-	limit := 5
-	if len(s.Languages) < limit {
-		limit = len(s.Languages)
-	}
-
-	var rows []string
-	for i := 0; i < limit; i++ {
-		lang := s.Languages[i]
-		color := lipgloss.Color(lang.Color)
-		if lang.Color == "" {
-			color = ColorMuted
-		}
-
-		animatedPct := lang.Percent * progress
-		filledWidth := int(float64(barAreaWidth) * animatedPct / 100.0)
-		emptyWidth := barAreaWidth - filledWidth
-
-		bar := RenderBar(filledWidth, color) + RenderBarEmpty(emptyWidth)
-		label := LabelStyle.Render(fmt.Sprintf("%-14s %5.1f%%", lang.Name, lang.Percent))
-		row := lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(bar + "  " + label)
-		rows = append(rows, row)
-	}
-
-	parts := []string{"", title, ""}
-	parts = append(parts, rows...)
-	return strings.Join(parts, "\n")
-}
-
-func renderVillain(s github.Stats, anim AnimState, width int) string {
-	progress := anim.Progress()
-
-	title := GradientText("VILLAIN ARC", ColorCrimson, ColorRed)
-	title = TitleStyle.Width(width).Render(title)
-
-	commitCount := CounterAnimation(s.VillainCommits, progress)
-	countRendered := BigNumberStyle.Width(width).Foreground(ColorCrimson).Render(
-		fmt.Sprintf("%d commits", commitCount),
-	)
-
-	repoStr := TypewriterAnimation(s.VillainRepo, progress)
-	repoRendered := SubtitleStyle.Width(width).Render(fmt.Sprintf("to %s", repoStr))
-
-	tag := FootnoteStyle.Width(width).Render("obsessed much?")
-
-	return strings.Join([]string{
-		"",
-		title,
-		"",
-		countRendered,
-		repoRendered,
-		"",
-		tag,
-	}, "\n")
-}
-
-func renderWeekend(s github.Stats, anim AnimState, width int) string {
-	progress := anim.Progress()
-
-	title := GradientText("WEEKEND WARRIOR", ColorCyan, ColorGreen)
-	title = TitleStyle.Width(width).Render(title)
-
-	animatedPct := s.WeekendPercent * progress
-	weekendWidth := int(float64(width/2) * animatedPct / 100.0)
-	weekdayWidth := width/2 - weekendWidth
-
-	weekendBar := RenderBar(weekendWidth, ColorCyan)
-	weekdayBar := RenderBarEmpty(weekdayWidth)
-	bar := lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(weekendBar + weekdayBar)
-
-	pctLabel := SubtitleStyle.Width(width).Render(
-		fmt.Sprintf("%.1f%% of commits on weekends", animatedPct),
-	)
-
-	var verdict string
-	switch {
-	case s.WeekendPercent >= 50:
-		verdict = "you live for the weekend."
-	case s.WeekendPercent >= 25:
-		verdict = "work hard, push harder."
-	default:
-		verdict = "strictly business. respect."
-	}
-	verdictRendered := FootnoteStyle.Width(width).Render(verdict)
-
-	return strings.Join([]string{
-		"",
-		title,
-		"",
-		bar,
-		"",
-		pctLabel,
-		verdictRendered,
-	}, "\n")
-}
-
-func renderNovel(s github.Stats, anim AnimState, width int) string {
-	progress := anim.Progress()
-
-	title := GradientText("COMMIT AS NOVEL", ColorPurple, ColorPink)
-	title = TitleStyle.Width(width).Render(title)
-
-	boxWidth := width - 8
-	if boxWidth < 20 {
-		boxWidth = 20
-	}
-
-	wrapped := wordWrap(s.LongestMessage, boxWidth-4)
-	animated := TypewriterAnimation(wrapped, progress)
-
-	boxStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(ColorPurple).
-		Padding(1, 2).
-		Width(boxWidth).
-		Align(lipgloss.Left)
-
-	box := lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(
-		boxStyle.Render(animated),
-	)
-
-	charCount := SubtitleStyle.Width(width).Render(
-		fmt.Sprintf("%d characters · %s", s.LongestMessageLen, s.LongestMessageRepo),
-	)
-
-	return strings.Join([]string{
-		"",
-		title,
-		"",
-		box,
-		"",
-		charCount,
-	}, "\n")
-}
-
-func renderPersonality(s github.Stats, anim AnimState, width int) string {
-	progress := anim.Progress()
-
-	title := GradientText("YOUR DEV PERSONALITY", ColorGreen, ColorCyan)
-	title = TitleStyle.Width(width).Render(title)
-
-	archetype := TypewriterAnimation(s.Archetype, progress)
-	archetypeGradient := GradientText(strings.ToUpper(archetype), ColorCyan, ColorGreen)
-	archetypeRendered := BigNumberStyle.Width(width).Render(archetypeGradient)
-
-	pillColors := [3]lipgloss.Color{ColorPurple, ColorPink, ColorYellow}
-	var pills []string
-	for i, trait := range s.Traits {
-		animated := TypewriterAnimation(trait, progress)
-		if animated == "" {
-			continue
-		}
-		pill := PillStyle.Foreground(pillColors[i%3]).Render(animated)
-		pills = append(pills, pill)
-	}
-	pillRow := lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(
-		strings.Join(pills, "  "),
-	)
-
-	gif := FootnoteStyle.Width(width).Render("press g for GIF")
-
-	return strings.Join([]string{
-		"",
-		title,
-		"",
-		archetypeRendered,
-		"",
-		pillRow,
-		"",
-		gif,
-	}, "\n")
+	return strings.Repeat("\n", padTop) + content
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+// panel wraps content in a centered bordered box with accent color.
+func panel(content string, accent lipgloss.Color, width int) string {
+	boxWidth := width - 4
+	if boxWidth > 80 {
+		boxWidth = 80
+	}
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(accent).
+		Padding(1, 3).
+		Width(boxWidth).
+		Align(lipgloss.Center).
+		Render(content)
+	return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(box)
+}
+
+// center centers text within width.
+func center(s string, width int) string {
+	return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(s)
+}
+
+// bigText renders text large and bold with color.
+func bigText(s string, color lipgloss.Color) string {
+	return lipgloss.NewStyle().
+		Foreground(color).
+		Bold(true).
+		Render(s)
+}
+
+// dimText renders dim muted text.
+func dimText(s string) string {
+	return lipgloss.NewStyle().Foreground(ColorDim).Render(s)
+}
+
+// mutedText renders muted text.
+func mutedText(s string) string {
+	return lipgloss.NewStyle().Foreground(ColorMuted).Render(s)
+}
+
+// accentLine renders a decorative line.
+func accentLine(width int, color lipgloss.Color) string {
+	line := strings.Repeat("─", width)
+	return lipgloss.NewStyle().Foreground(color).Render(line)
+}
+
+// statBlock renders a number + label vertically.
+func statBlock(value string, label string, color lipgloss.Color) string {
+	num := lipgloss.NewStyle().Foreground(color).Bold(true).Render(value)
+	lbl := lipgloss.NewStyle().Foreground(ColorMuted).Render(label)
+	return num + "\n" + lbl
+}
+
+// pill renders a colored pill/tag.
+func pill(text string, fg lipgloss.Color, bg lipgloss.Color) string {
+	return lipgloss.NewStyle().
+		Foreground(fg).
+		Background(bg).
+		Bold(true).
+		Padding(0, 2).
+		Render(text)
+}
 
 // wordWrap wraps s at maxWidth characters, breaking at word boundaries.
 func wordWrap(s string, maxWidth int) string {
@@ -508,7 +159,6 @@ func wordWrap(s string, maxWidth int) string {
 	if len(words) == 0 {
 		return s
 	}
-
 	var sb strings.Builder
 	lineLen := 0
 	for i, word := range words {
@@ -529,4 +179,529 @@ func wordWrap(s string, maxWidth int) string {
 		}
 	}
 	return sb.String()
+}
+
+// ---------------------------------------------------------------------------
+// Slide renderers
+// ---------------------------------------------------------------------------
+
+func renderTitle(s github.Stats, anim AnimState, width int) string {
+	p := anim.Progress()
+
+	// Big sparkle decorations
+	sparkle := dimText("✦  ✦  ✦")
+
+	// Main title with gradient
+	title := GradientText("  D E V   W R A P P E D  ", ColorRed, ColorCyan)
+	titleStyled := lipgloss.NewStyle().Bold(true).Render(title)
+
+	// Year with accent
+	year := bigText(s.YearLabel, ColorCyan)
+
+	// Username with typewriter
+	handle := TypewriterAnimation("@"+s.Username, p)
+	handleStyled := lipgloss.NewStyle().Foreground(ColorPurple).Bold(true).Render(handle)
+
+	// Subtitle
+	sub := mutedText("your year in code")
+
+	inner := strings.Join([]string{
+		"",
+		sparkle,
+		"",
+		"",
+		titleStyled,
+		year,
+		"",
+		"",
+		handleStyled,
+		"",
+		sub,
+		"",
+		sparkle,
+		"",
+	}, "\n")
+
+	return panel(inner, ColorPurple, width)
+}
+
+func renderNumbers(s github.Stats, anim AnimState, width int) string {
+	p := anim.Progress()
+
+	contribs := CounterAnimation(s.TotalContributions, p)
+	repos := CounterAnimation(s.TotalRepos, p)
+	stars := CounterAnimation(s.TotalStars, p)
+
+	heading := GradientText("YOUR YEAR IN NUMBERS", ColorYellow, ColorCyan)
+	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+
+	divider := accentLine(40, ColorDim)
+
+	// Stat blocks side by side
+	col1 := statBlock(fmt.Sprintf("%d", contribs), "contributions", ColorCyan)
+	col2 := statBlock(fmt.Sprintf("%d", repos), "repositories", ColorPurple)
+	col3 := statBlock(fmt.Sprintf("%d", stars), "stars earned", ColorYellow)
+
+	statsRow := lipgloss.JoinHorizontal(lipgloss.Center,
+		lipgloss.NewStyle().Width(22).Align(lipgloss.Center).Render(col1),
+		lipgloss.NewStyle().Width(22).Align(lipgloss.Center).Render(col2),
+		lipgloss.NewStyle().Width(22).Align(lipgloss.Center).Render(col3),
+	)
+
+	inner := strings.Join([]string{
+		"",
+		headingStyled,
+		"",
+		divider,
+		"",
+		"",
+		statsRow,
+		"",
+		"",
+		divider,
+		"",
+	}, "\n")
+
+	return panel(inner, ColorYellow, width)
+}
+
+func renderHeatmap(s github.Stats, anim AnimState, width int) string {
+	p := anim.Progress()
+
+	heading := GradientText("CONTRIBUTION HEATMAP", ColorGreen, ColorCyan)
+	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+
+	totalCells := len(s.Calendar)
+	revealed := HeatmapAnimation(totalCells, p)
+
+	// Grid: 7 rows x up to 53 columns
+	cols := 53
+	boxWidth := width - 8
+	if boxWidth > 80 {
+		boxWidth = 80
+	}
+	// Scale columns to fit box
+	maxCols := (boxWidth - 4) / 2
+	if cols > maxCols {
+		cols = maxCols
+	}
+
+	var gridLines []string
+	for row := 0; row < 7; row++ {
+		var rowSb strings.Builder
+		for col := 0; col < cols; col++ {
+			idx := row*53 + col // always use 53 as the original stride
+			if idx >= totalCells {
+				rowSb.WriteString("  ")
+				continue
+			}
+			if idx >= revealed {
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#1a1a2e")).Render("▪ "))
+				continue
+			}
+			day := s.Calendar[idx]
+			displayLevel := day.Level
+			if displayLevel == 0 && day.Count > 0 {
+				switch {
+				case day.Count >= 20:
+					displayLevel = 4
+				case day.Count >= 10:
+					displayLevel = 3
+				case day.Count >= 5:
+					displayLevel = 2
+				default:
+					displayLevel = 1
+				}
+			}
+			switch displayLevel {
+			case 0:
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#1a1a2e")).Render("▪ "))
+			case 1:
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#0e4429")).Render("▪ "))
+			case 2:
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#006d32")).Render("▪ "))
+			case 3:
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#26a641")).Render("▪ "))
+			default:
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#39d353")).Render("▪ "))
+			}
+		}
+		gridLines = append(gridLines, rowSb.String())
+	}
+
+	grid := strings.Join(gridLines, "\n")
+
+	// Streak callout
+	streak := ""
+	if s.LongestStreak > 0 {
+		streakNum := bigText(fmt.Sprintf("%d", s.LongestStreak), ColorGreen)
+		streak = streakNum + mutedText(" day streak") +
+			dimText(fmt.Sprintf("  %s → %s", s.StreakStart.Format("Jan 2"), s.StreakEnd.Format("Jan 2")))
+	}
+
+	inner := strings.Join([]string{
+		"",
+		headingStyled,
+		"",
+		grid,
+		"",
+		streak,
+		"",
+	}, "\n")
+
+	return panel(inner, ColorGreen, width)
+}
+
+func renderChaos(s github.Stats, anim AnimState, width int) string {
+	p := anim.Progress()
+
+	quotes := []string{
+		"were you okay?",
+		"someone had a deadline.",
+		"chaos is a ladder.",
+		"absolutely unhinged.",
+		"the git log doesn't lie.",
+	}
+	quote := quotes[s.BusiestDate.Day()%len(quotes)]
+
+	heading := lipgloss.NewStyle().Foreground(ColorRed).Bold(true).Render("YOUR MOST CHAOTIC DAY")
+
+	date := TypewriterAnimation(s.BusiestDate.Format("January 2, 2006"), p)
+	dateStyled := lipgloss.NewStyle().Foreground(ColorWhite).Bold(true).Render(date)
+
+	count := CounterAnimation(s.BusiestCount, p)
+	countStyled := lipgloss.NewStyle().Foreground(ColorRed).Bold(true).Render(fmt.Sprintf("%d", count))
+	countLine := countStyled + mutedText(" contributions")
+
+	quoteStyled := lipgloss.NewStyle().Foreground(ColorDim).Italic(true).Render(fmt.Sprintf("« %s »", quote))
+
+	inner := strings.Join([]string{
+		"",
+		heading,
+		"",
+		"",
+		dateStyled,
+		"",
+		countLine,
+		"",
+		"",
+		quoteStyled,
+		"",
+	}, "\n")
+
+	return panel(inner, ColorRed, width)
+}
+
+func renderClock(s github.Stats, anim AnimState, width int) string {
+	p := anim.Progress()
+
+	heading := GradientText("WHEN YOU CODE", ColorPurple, ColorPink)
+	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+
+	labels := [4]string{"Morning   ", "Afternoon ", "Evening   ", "Night     "}
+	icons := [4]string{"☀️ ", "🌤 ", "🌙", "🌑"}
+	colors := [4]lipgloss.Color{ColorYellow, ColorCyan, ColorPurple, ColorPink}
+
+	maxVal := 1
+	total := 0
+	for _, v := range s.TimeBlocks {
+		total += v
+		if v > maxVal {
+			maxVal = v
+		}
+	}
+
+	barWidth := 30
+
+	var rows []string
+	for i, count := range s.TimeBlocks {
+		animated := CounterAnimation(count, p)
+		filled := 0
+		if maxVal > 0 {
+			filled = int(float64(barWidth) * float64(animated) / float64(maxVal))
+		}
+		empty := barWidth - filled
+
+		pct := 0.0
+		if total > 0 {
+			pct = float64(count) / float64(total) * 100
+		}
+
+		icon := icons[i]
+		label := lipgloss.NewStyle().Foreground(colors[i]).Bold(true).Render(labels[i])
+		bar := RenderBar(filled, colors[i]) + RenderBarEmpty(empty)
+		pctStr := dimText(fmt.Sprintf(" %4.0f%%", pct))
+
+		rows = append(rows, icon+" "+label+" "+bar+pctStr)
+	}
+
+	divider := accentLine(50, ColorDim)
+
+	// Verdict
+	verdictText := s.TimeLabel
+	verdictStyled := lipgloss.NewStyle().Foreground(ColorPurple).Bold(true).Render(verdictText)
+
+	footnote := dimText("based on your last 30 days")
+
+	inner := strings.Join([]string{
+		"",
+		headingStyled,
+		"",
+		divider,
+		"",
+	}, "\n")
+	for _, r := range rows {
+		inner += r + "\n"
+	}
+	inner += strings.Join([]string{
+		"",
+		divider,
+		"",
+		verdictStyled,
+		footnote,
+		"",
+	}, "\n")
+
+	return panel(inner, ColorPurple, width)
+}
+
+func renderLanguages(s github.Stats, anim AnimState, width int) string {
+	p := anim.Progress()
+
+	heading := GradientText("YOUR TOP LANGUAGES", ColorYellow, ColorRed)
+	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+
+	barWidth := 30
+	limit := 5
+	if len(s.Languages) < limit {
+		limit = len(s.Languages)
+	}
+
+	var rows []string
+	for i := 0; i < limit; i++ {
+		lang := s.Languages[i]
+		color := lipgloss.Color(lang.Color)
+		if lang.Color == "" {
+			color = ColorMuted
+		}
+
+		animPct := lang.Percent * p
+		filled := int(float64(barWidth) * animPct / 100.0)
+		empty := barWidth - filled
+
+		nameStyled := lipgloss.NewStyle().Foreground(color).Bold(true).Width(12).Render(lang.Name)
+		bar := RenderBar(filled, color) + RenderBarEmpty(empty)
+		pctStr := dimText(fmt.Sprintf(" %5.1f%%", lang.Percent))
+
+		rows = append(rows, nameStyled+" "+bar+pctStr)
+	}
+
+	// Fun subtitle
+	subtitle := ""
+	if len(s.Languages) >= 4 && s.Languages[0].Percent < 40 {
+		subtitle = mutedText("polyglot energy ✨")
+	} else if len(s.Languages) > 0 && s.Languages[0].Percent > 70 {
+		subtitle = mutedText(s.Languages[0].Name + " loyalist 💪")
+	}
+
+	divider := accentLine(50, ColorDim)
+
+	inner := strings.Join([]string{
+		"",
+		headingStyled,
+		"",
+		divider,
+		"",
+	}, "\n")
+	for _, r := range rows {
+		inner += r + "\n"
+	}
+	inner += strings.Join([]string{
+		"",
+		divider,
+		"",
+		subtitle,
+		"",
+	}, "\n")
+
+	return panel(inner, ColorRed, width)
+}
+
+func renderVillain(s github.Stats, anim AnimState, width int) string {
+	p := anim.Progress()
+
+	heading := lipgloss.NewStyle().Foreground(ColorCrimson).Bold(true).Render("⚡ VILLAIN ARC ⚡")
+
+	count := CounterAnimation(s.VillainCommits, p)
+	countStyled := lipgloss.NewStyle().Foreground(ColorCrimson).Bold(true).Render(fmt.Sprintf("%d", count))
+	countLine := countStyled + mutedText(" commits")
+
+	repo := TypewriterAnimation(s.VillainRepo, p)
+	repoStyled := dimText("to ") + lipgloss.NewStyle().Foreground(ColorWhite).Bold(true).Render(repo)
+
+	quote := lipgloss.NewStyle().Foreground(ColorDim).Italic(true).Render("« obsessed much? »")
+	footnote := dimText("based on your last 30 days")
+
+	inner := strings.Join([]string{
+		"",
+		heading,
+		"",
+		"",
+		countLine,
+		"",
+		repoStyled,
+		"",
+		"",
+		quote,
+		"",
+		footnote,
+		"",
+	}, "\n")
+
+	return panel(inner, ColorCrimson, width)
+}
+
+func renderWeekend(s github.Stats, anim AnimState, width int) string {
+	p := anim.Progress()
+
+	heading := GradientText("WEEKEND WARRIOR", ColorPink, ColorCyan)
+	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+
+	animPct := s.WeekendPercent * p
+	pctStyled := lipgloss.NewStyle().Foreground(ColorPink).Bold(true).Render(fmt.Sprintf("%.0f%%", animPct))
+	pctLine := pctStyled + mutedText(" of your commits land on weekends")
+
+	barWidth := 50
+	weekendW := int(float64(barWidth) * animPct / 100.0)
+	weekdayW := barWidth - weekendW
+	bar := RenderBar(weekendW, ColorPink) + RenderBarEmpty(weekdayW)
+	barLabels := dimText("weekdays") + strings.Repeat(" ", barWidth-16) + lipgloss.NewStyle().Foreground(ColorPink).Render("weekends")
+
+	var verdict string
+	switch {
+	case s.WeekendPercent >= 50:
+		verdict = "you live for the weekend. respect."
+	case s.WeekendPercent >= 25:
+		verdict = "work hard, push harder."
+	default:
+		verdict = "strictly business. nice."
+	}
+	verdictStyled := lipgloss.NewStyle().Foreground(ColorDim).Italic(true).Render(verdict)
+
+	inner := strings.Join([]string{
+		"",
+		headingStyled,
+		"",
+		"",
+		pctLine,
+		"",
+		bar,
+		barLabels,
+		"",
+		"",
+		verdictStyled,
+		"",
+	}, "\n")
+
+	return panel(inner, ColorPink, width)
+}
+
+func renderNovel(s github.Stats, anim AnimState, width int) string {
+	p := anim.Progress()
+
+	heading := GradientText("THE NOVEL", ColorYellow, ColorPurple)
+	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+	sub := mutedText("your longest commit message")
+
+	// Message box
+	msgWidth := 60
+	wrapped := wordWrap(s.LongestMessage, msgWidth-4)
+	if len(wrapped) > 300 {
+		wrapped = wrapped[:300] + "..."
+	}
+	animated := TypewriterAnimation(wrapped, p)
+
+	msgBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(ColorYellow).
+		Foreground(ColorYellow).
+		Padding(1, 2).
+		Width(msgWidth).
+		Render(animated)
+
+	charCount := bigText(fmt.Sprintf("%d", s.LongestMessageLen), ColorYellow) + mutedText(" characters")
+	repo := dimText("in ") + lipgloss.NewStyle().Foreground(ColorWhite).Render(s.LongestMessageRepo)
+	quote := lipgloss.NewStyle().Foreground(ColorDim).Italic(true).Render("that's not a commit, that's a blog post.")
+	footnote := dimText("based on your last 30 days")
+
+	inner := strings.Join([]string{
+		"",
+		headingStyled,
+		sub,
+		"",
+		msgBox,
+		"",
+		charCount,
+		repo,
+		"",
+		quote,
+		footnote,
+		"",
+	}, "\n")
+
+	return panel(inner, ColorYellow, width)
+}
+
+func renderPersonality(s github.Stats, anim AnimState, width int) string {
+	p := anim.Progress()
+
+	label := dimText("you are")
+
+	archetype := TypewriterAnimation(s.Archetype, p)
+	archetypeGrad := GradientText(strings.ToUpper(archetype), ColorCyan, ColorPink)
+	archetypeStyled := lipgloss.NewStyle().Bold(true).Render(archetypeGrad)
+
+	// Trait pills with colored backgrounds
+	pillColors := [3]struct{ fg, bg lipgloss.Color }{
+		{lipgloss.Color("#1a1a2e"), ColorPurple},
+		{lipgloss.Color("#1a1a2e"), ColorPink},
+		{lipgloss.Color("#1a1a2e"), ColorCyan},
+	}
+	var pills []string
+	for i, trait := range s.Traits {
+		t := TypewriterAnimation(trait, p)
+		if t == "" {
+			continue
+		}
+		name := strings.TrimPrefix(t, "The ")
+		pills = append(pills, pill(strings.ToLower(name), pillColors[i].fg, pillColors[i].bg))
+	}
+	pillRow := strings.Join(pills, "  ")
+
+	divider := accentLine(40, ColorDim)
+
+	outro := mutedText("Your " + s.YearLabel + ", Unwrapped.")
+	gifHint := lipgloss.NewStyle().Foreground(ColorCyan).Render("press ") +
+		lipgloss.NewStyle().Foreground(ColorCyan).Bold(true).Render("g") +
+		lipgloss.NewStyle().Foreground(ColorCyan).Render(" to export as GIF")
+
+	inner := strings.Join([]string{
+		"",
+		"",
+		label,
+		"",
+		archetypeStyled,
+		"",
+		pillRow,
+		"",
+		"",
+		divider,
+		"",
+		outro,
+		"",
+		gifHint,
+		"",
+	}, "\n")
+
+	return panel(inner, ColorCyan, width)
 }
