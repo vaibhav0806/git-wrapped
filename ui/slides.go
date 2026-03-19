@@ -528,7 +528,11 @@ func renderLanguages(s github.Stats, anim AnimState, width int) string {
 		empty := barWidth - filled
 
 		rank := dim(fmt.Sprintf("#%d ", i+1))
-		name := lipgloss.NewStyle().Foreground(color).Bold(true).Width(12).Render(lang.Name)
+		langName := lang.Name
+		if len(langName) > 11 {
+			langName = langName[:10] + "…"
+		}
+		name := lipgloss.NewStyle().Foreground(color).Bold(true).Width(12).Render(langName)
 		bar := RenderBar(filled, color) + RenderBarEmpty(empty)
 		pctStr := dim(fmt.Sprintf("  %5.1f%%", lang.Percent))
 
