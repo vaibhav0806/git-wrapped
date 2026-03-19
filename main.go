@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 
-	"github.com/vaibhav/gh-wrapped/export"
-	"github.com/vaibhav/gh-wrapped/ui"
+	"github.com/vaibhav0806/git-wrapped/export"
+	"github.com/vaibhav0806/git-wrapped/ui"
 )
 
 func main() {

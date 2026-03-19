@@ -19,27 +19,37 @@ Spotify Wrapped, but for your GitHub year. A beautiful terminal slideshow of you
 
 ## What is this?
 
-Run `gh-wrapped <username>` and get a cinematic, animated terminal presentation of any GitHub user's year — contributions, streaks, languages, coding habits, and a personality archetype. No authentication required.
+Run `git-wrapped <username>` and get a cinematic, animated terminal presentation of any GitHub user's year — contributions, streaks, languages, coding habits, and a personality archetype. No authentication required.
 
 ## Install
 
+**Homebrew** (macOS/Linux):
+
 ```bash
-go install github.com/vaibhav/gh-wrapped@latest
+brew install vaibhav0806/tap/git-wrapped
 ```
 
-Or build from source:
+**Go**:
 
 ```bash
-git clone https://github.com/vaibhav/gh-wrapped.git
-cd gh-wrapped
-go build -o gh-wrapped .
+go install github.com/vaibhav0806/git-wrapped@latest
+```
+
+**Binary**: download from [Releases](https://github.com/vaibhav0806/git-wrapped/releases)
+
+**Build from source**:
+
+```bash
+git clone https://github.com/vaibhav0806/git-wrapped.git
+cd git-wrapped
+go build -o git-wrapped .
 ```
 
 ## Usage
 
 ```bash
-gh-wrapped <username>        # wrap any GitHub user
-gh-wrapped <username> --auto # auto-play mode (no keyboard)
+git-wrapped <username>        # wrap any GitHub user
+git-wrapped <username> --auto # auto-play mode (no keyboard)
 ```
 
 Slides auto-advance. Use arrow keys to navigate manually, `a` to resume auto-play, `q` to quit.

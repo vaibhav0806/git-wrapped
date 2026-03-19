@@ -1,4 +1,4 @@
-module github.com/vaibhav/gh-wrapped
+module github.com/vaibhav0806/git-wrapped
 
 go 1.25.6
 

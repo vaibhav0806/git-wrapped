@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/vaibhav/gh-wrapped/github"
+	"github.com/vaibhav0806/git-wrapped/github"
 )
 
 type SlideID int

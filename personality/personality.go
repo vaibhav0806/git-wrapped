@@ -4,7 +4,7 @@ package personality
 import (
 	"sort"
 
-	"github.com/vaibhav/gh-wrapped/github"
+	"github.com/vaibhav0806/git-wrapped/github"
 )
 
 type Result struct {

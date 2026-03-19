@@ -4,7 +4,7 @@ package personality
 import (
 	"testing"
 
-	"github.com/vaibhav/gh-wrapped/github"
+	"github.com/vaibhav0806/git-wrapped/github"
 )
 
 func TestScoreNightcrawler(t *testing.T) {

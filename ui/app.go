@@ -9,8 +9,8 @@ import (
 	"github.com/charmbracelet/bubbles/spinner"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/vaibhav/gh-wrapped/github"
-	"github.com/vaibhav/gh-wrapped/personality"
+	"github.com/vaibhav0806/git-wrapped/github"
+	"github.com/vaibhav0806/git-wrapped/personality"
 	"golang.org/x/sync/errgroup"
 )
 
