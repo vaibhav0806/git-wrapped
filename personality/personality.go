@@ -12,6 +12,18 @@ type Result struct {
 	Traits    [3]string
 }
 
+// Descriptions maps archetype names to short human-readable explanations.
+var Descriptions = map[string]string{
+	"The Nightcrawler": "you come alive after dark — most of your code is written when others sleep",
+	"The Obsessed":     "one repo owns your soul — you can't stop pushing to it",
+	"The Novelist":     "your commit messages read like short stories",
+	"The Polyglot":     "you speak many languages fluently — no loyalty, just vibes",
+	"The Specialist":   "one language to rule them all — deep expertise, laser focus",
+	"The Machine":      "relentless consistency — long streaks, no days off",
+	"The Weekender":    "weekends aren't for rest — they're for shipping",
+	"The Sprinter":     "calm, calm, calm, then BOOM — explosive bursts of activity",
+}
+
 type archetype struct {
 	Name  string
 	Score float64

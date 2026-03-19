@@ -182,7 +182,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		stats := github.ComputeStats(msg.User, msg.Events, msg.Repos, msg.Calendar)
 		p := personality.Compute(stats)
 		stats.Archetype = p.Archetype
+		stats.ArchetypeDescription = personality.Descriptions[p.Archetype]
 		stats.Traits = p.Traits
+		for i, t := range p.Traits {
+			if t != "" {
+				stats.TraitDescriptions[i] = personality.Descriptions[t]
+			}
+		}
 
 		m.stats = stats
 		m.slides = ActiveSlides(stats)

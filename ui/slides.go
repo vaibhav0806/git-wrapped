@@ -719,10 +719,10 @@ func renderNovel(s github.Stats, anim AnimState, width int) string {
 func renderPersonality(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	// Small "you are" label
+	// "you are" label
 	label := dim("you are")
 
-	// BIG archetype name with background highlight
+	// BIG archetype name
 	archetype := TypewriterAnimation(s.Archetype, p)
 	archetypeName := strings.ToUpper(archetype)
 	archetypeStyled := lipgloss.NewStyle().
@@ -732,22 +732,33 @@ func renderPersonality(s github.Stats, anim AnimState, width int) string {
 		Padding(0, 3).
 		Render(" " + archetypeName + " ")
 
-	// Trait pills with colored backgrounds
+	// Archetype description
+	archetypeDesc := ""
+	if p > 0.3 {
+		archetypeDesc = italic(s.ArchetypeDescription)
+	}
+
+	// Trait list with descriptions
 	pillDefs := [3]struct{ fg, bg lipgloss.Color }{
 		{lipgloss.Color("#0d1117"), ColorPurple},
 		{lipgloss.Color("#0d1117"), ColorPink},
 		{lipgloss.Color("#0d1117"), ColorCyan},
 	}
-	var pills []string
+
+	var traitLines []string
 	for i, trait := range s.Traits {
 		t := TypewriterAnimation(trait, p)
 		if t == "" {
 			continue
 		}
 		name := strings.TrimPrefix(t, "The ")
-		pills = append(pills, pill(" "+strings.ToLower(name)+" ", pillDefs[i].fg, pillDefs[i].bg))
+		traitPill := pill(" "+strings.ToLower(name)+" ", pillDefs[i].fg, pillDefs[i].bg)
+		desc := ""
+		if p > 0.5 && s.TraitDescriptions[i] != "" {
+			desc = "  " + dim(s.TraitDescriptions[i])
+		}
+		traitLines = append(traitLines, traitPill+desc)
 	}
-	pillRow := strings.Join(pills, "  ")
 
 	outro := muted("Your " + s.YearLabel + ", Unwrapped.")
 
@@ -761,15 +772,23 @@ func renderPersonality(s github.Stats, anim AnimState, width int) string {
 
 	inner := strings.Join([]string{
 		"",
-		"",
 		label,
 		"",
 		archetypeStyled,
+		archetypeDesc,
 		"",
-		pillRow,
+		divider(50),
 		"",
+	}, "\n")
+
+	// Add trait lines
+	for _, tl := range traitLines {
+		inner += tl + "\n"
+	}
+
+	inner += strings.Join([]string{
 		"",
-		divider(40),
+		divider(50),
 		"",
 		outro,
 		"",

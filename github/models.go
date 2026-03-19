@@ -90,8 +90,10 @@ type Stats struct {
 	LongestMessageLen  int
 
 	// Slide 10: Personality
-	Archetype string
-	Traits    [3]string
+	Archetype            string
+	ArchetypeDescription string
+	Traits               [3]string
+	TraitDescriptions    [3]string
 
 	// Degraded mode flag
 	HasCalendar bool
