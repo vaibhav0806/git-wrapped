@@ -8,11 +8,10 @@ import (
 	"github.com/vaibhav/gh-wrapped/github"
 )
 
-// SlideID identifies each slide.
 type SlideID int
 
 const (
-	SlideTitle       SlideID = iota
+	SlideTitle SlideID = iota
 	SlideNumbers
 	SlideHeatmap
 	SlideChaos
@@ -24,7 +23,6 @@ const (
 	SlidePersonality
 )
 
-// ActiveSlides returns the ordered list of slides that have enough data to show.
 func ActiveSlides(s github.Stats) []SlideID {
 	slides := []SlideID{SlideTitle}
 	if s.HasCalendar {
@@ -49,7 +47,6 @@ func ActiveSlides(s github.Stats) []SlideID {
 	return slides
 }
 
-// RenderSlide renders a slide centered in a panel.
 func RenderSlide(id SlideID, s github.Stats, anim AnimState, width, height int) string {
 	var content string
 	switch id {
@@ -74,8 +71,6 @@ func RenderSlide(id SlideID, s github.Stats, anim AnimState, width, height int) 
 	case SlidePersonality:
 		content = renderPersonality(s, anim, width)
 	}
-
-	// Center vertically
 	lines := strings.Split(content, "\n")
 	padTop := (height - len(lines)) / 2
 	if padTop < 0 {
@@ -88,7 +83,6 @@ func RenderSlide(id SlideID, s github.Stats, anim AnimState, width, height int) 
 // Helpers
 // ---------------------------------------------------------------------------
 
-// panel wraps content in a centered bordered box with accent color and dark background.
 func panel(content string, accent lipgloss.Color, width int) string {
 	boxWidth := width - 4
 	if boxWidth > 80 {
@@ -98,51 +92,38 @@ func panel(content string, accent lipgloss.Color, width int) string {
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(accent).
 		Background(ColorPanel).
-		Padding(1, 3).
+		Padding(1, 4).
 		Width(boxWidth).
 		Align(lipgloss.Center).
 		Render(content)
 	return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(box)
 }
 
-// center centers text within width.
-func center(s string, width int) string {
-	return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(s)
+func heading(text string, color lipgloss.Color) string {
+	return lipgloss.NewStyle().Foreground(color).Bold(true).Render(text)
 }
 
-// bigText renders text large and bold with color.
-func bigText(s string, color lipgloss.Color) string {
-	return lipgloss.NewStyle().
-		Foreground(color).
-		Bold(true).
-		Render(s)
+func bold(text string, color lipgloss.Color) string {
+	return lipgloss.NewStyle().Foreground(color).Bold(true).Render(text)
 }
 
-// dimText renders dim muted text.
-func dimText(s string) string {
-	return lipgloss.NewStyle().Foreground(ColorDim).Render(s)
+func dim(text string) string {
+	return lipgloss.NewStyle().Foreground(ColorDim).Render(text)
 }
 
-// mutedText renders muted text.
-func mutedText(s string) string {
-	return lipgloss.NewStyle().Foreground(ColorMuted).Render(s)
+func muted(text string) string {
+	return lipgloss.NewStyle().Foreground(ColorMuted).Render(text)
 }
 
-// accentLine renders a decorative line.
-func accentLine(width int, color lipgloss.Color) string {
-	line := strings.Repeat("─", width)
-	return lipgloss.NewStyle().Foreground(color).Render(line)
+func italic(text string) string {
+	return lipgloss.NewStyle().Foreground(ColorDim).Italic(true).Render(text)
 }
 
-// statBlock renders a number + label vertically.
-func statBlock(value string, label string, color lipgloss.Color) string {
-	num := lipgloss.NewStyle().Foreground(color).Bold(true).Render(value)
-	lbl := lipgloss.NewStyle().Foreground(ColorMuted).Render(label)
-	return num + "\n" + lbl
+func divider(w int) string {
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("#21262d")).Render(strings.Repeat("─", w))
 }
 
-// pill renders a colored pill/tag.
-func pill(text string, fg lipgloss.Color, bg lipgloss.Color) string {
+func pill(text string, fg, bg lipgloss.Color) string {
 	return lipgloss.NewStyle().
 		Foreground(fg).
 		Background(bg).
@@ -151,7 +132,6 @@ func pill(text string, fg lipgloss.Color, bg lipgloss.Color) string {
 		Render(text)
 }
 
-// wordWrap wraps s at maxWidth characters, breaking at word boundaries.
 func wordWrap(s string, maxWidth int) string {
 	if maxWidth <= 0 {
 		return s
@@ -183,10 +163,9 @@ func wordWrap(s string, maxWidth int) string {
 }
 
 // ---------------------------------------------------------------------------
-// Slide renderers
+// Slide 1: Title
 // ---------------------------------------------------------------------------
 
-// ASCII art block letters for "DEV WRAPPED"
 var asciiDev = []string{
 	"██████╗ ███████╗██╗   ██╗",
 	"██╔══██╗██╔════╝██║   ██║",
@@ -208,53 +187,46 @@ var asciiWrapped = []string{
 func renderTitle(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	// Render ASCII art with gradient coloring per line
 	var devLines []string
 	for _, line := range asciiDev {
-		// Reveal with progress
-		chars := int(float64(len([]rune(line))) * p)
-		if chars > len([]rune(line)) {
-			chars = len([]rune(line))
+		runes := []rune(line)
+		chars := int(float64(len(runes)) * p)
+		if chars > len(runes) {
+			chars = len(runes)
 		}
-		visible := string([]rune(line)[:chars])
-		devLines = append(devLines, lipgloss.NewStyle().Foreground(ColorCyan).Bold(true).Render(visible))
+		devLines = append(devLines, bold(string(runes[:chars]), ColorCyan))
 	}
-	devArt := strings.Join(devLines, "\n")
 
 	var wrappedLines []string
 	for _, line := range asciiWrapped {
-		chars := int(float64(len([]rune(line))) * p)
-		if chars > len([]rune(line)) {
-			chars = len([]rune(line))
+		runes := []rune(line)
+		chars := int(float64(len(runes)) * p)
+		if chars > len(runes) {
+			chars = len(runes)
 		}
-		visible := string([]rune(line)[:chars])
-		wrappedLines = append(wrappedLines, lipgloss.NewStyle().Foreground(ColorPurple).Bold(true).Render(visible))
+		wrappedLines = append(wrappedLines, bold(string(runes[:chars]), ColorPurple))
 	}
-	wrappedArt := strings.Join(wrappedLines, "\n")
 
-	// Year label
-	year := bigText(s.YearLabel, ColorPink)
-
-	// Username with typewriter
 	handle := TypewriterAnimation("@"+s.Username, p)
-	handleStyled := lipgloss.NewStyle().Foreground(ColorMuted).Render(handle)
-
-	sub := dimText("your year in code")
 
 	inner := strings.Join([]string{
 		"",
-		devArt,
-		wrappedArt,
+		strings.Join(devLines, "\n"),
+		strings.Join(wrappedLines, "\n"),
 		"",
-		year,
+		bold(s.YearLabel, ColorPink),
 		"",
-		handleStyled,
-		sub,
+		muted(handle),
+		dim("your year in code"),
 		"",
 	}, "\n")
 
 	return panel(inner, ColorPurple, width)
 }
+
+// ---------------------------------------------------------------------------
+// Slide 2: Year in Numbers
+// ---------------------------------------------------------------------------
 
 func renderNumbers(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
@@ -263,118 +235,147 @@ func renderNumbers(s github.Stats, anim AnimState, width int) string {
 	repos := CounterAnimation(s.TotalRepos, p)
 	stars := CounterAnimation(s.TotalStars, p)
 
-	heading := GradientText("YOUR YEAR IN NUMBERS", ColorYellow, ColorCyan)
-	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+	h := heading("YOUR YEAR IN NUMBERS", ColorCyan)
 
-	divider := accentLine(40, ColorDim)
+	// Each stat: big number on top, label below, inside a mini box
+	statStyle := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#21262d")).
+		Padding(1, 2).
+		Width(20).
+		Align(lipgloss.Center)
 
-	// Stat blocks side by side
-	col1 := statBlock(fmt.Sprintf("%d", contribs), "contributions", ColorCyan)
-	col2 := statBlock(fmt.Sprintf("%d", repos), "repositories", ColorPurple)
-	col3 := statBlock(fmt.Sprintf("%d", stars), "stars earned", ColorYellow)
+	stat := func(val string, label string, color lipgloss.Color) string {
+		return statStyle.Render(
+			bold(val, color) + "\n" + dim(label),
+		)
+	}
 
-	statsRow := lipgloss.JoinHorizontal(lipgloss.Center,
-		lipgloss.NewStyle().Width(22).Align(lipgloss.Center).Render(col1),
-		lipgloss.NewStyle().Width(22).Align(lipgloss.Center).Render(col2),
-		lipgloss.NewStyle().Width(22).Align(lipgloss.Center).Render(col3),
+	row := lipgloss.JoinHorizontal(lipgloss.Center,
+		stat(fmt.Sprintf("%d", contribs), "contributions", ColorCyan),
+		"  ",
+		stat(fmt.Sprintf("%d", repos), "repositories", ColorPurple),
+		"  ",
+		stat(fmt.Sprintf("%d", stars), "stars earned", ColorYellow),
 	)
 
 	inner := strings.Join([]string{
 		"",
-		headingStyled,
+		h,
 		"",
-		divider,
+		divider(60),
 		"",
+		row,
 		"",
-		statsRow,
-		"",
-		"",
-		divider,
+		divider(60),
 		"",
 	}, "\n")
 
-	return panel(inner, ColorYellow, width)
+	return panel(inner, ColorCyan, width)
 }
+
+// ---------------------------------------------------------------------------
+// Slide 3: Contribution Heatmap
+// ---------------------------------------------------------------------------
 
 func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	heading := GradientText("CONTRIBUTION HEATMAP", ColorGreen, ColorCyan)
-	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+	h := heading("CONTRIBUTION HEATMAP", ColorGreen)
 
 	totalCells := len(s.Calendar)
 	revealed := HeatmapAnimation(totalCells, p)
 
-	// Grid: 7 rows x up to 53 columns
-	cols := 53
-	boxWidth := width - 8
-	if boxWidth > 80 {
-		boxWidth = 80
+	// GitHub-style green shades
+	shades := [5]lipgloss.Color{
+		lipgloss.Color("#161b22"), // 0: empty
+		lipgloss.Color("#0e4429"), // 1: low
+		lipgloss.Color("#006d32"), // 2: med
+		lipgloss.Color("#26a641"), // 3: high
+		lipgloss.Color("#39d353"), // 4: max
 	}
-	// Scale columns to fit box
+
+	cols := 53
+	boxWidth := width - 12
+	if boxWidth > 76 {
+		boxWidth = 76
+	}
 	maxCols := (boxWidth - 4) / 2
 	if cols > maxCols {
 		cols = maxCols
 	}
 
+	dayLabels := [7]string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
+
 	var gridLines []string
 	for row := 0; row < 7; row++ {
+		label := dim(dayLabels[row]) + " "
+		if row%2 == 0 {
+			label = dim(dayLabels[row]) + " "
+		} else {
+			label = "    " // only show every other day label
+		}
+
 		var rowSb strings.Builder
 		for col := 0; col < cols; col++ {
-			idx := row*53 + col // always use 53 as the original stride
+			idx := row*53 + col
 			if idx >= totalCells {
 				rowSb.WriteString("  ")
 				continue
 			}
 			if idx >= revealed {
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#1a1a2e")).Render("▪ "))
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("■ "))
 				continue
 			}
 			day := s.Calendar[idx]
-			displayLevel := day.Level
-			if displayLevel == 0 && day.Count > 0 {
+			lvl := day.Level
+			if lvl == 0 && day.Count > 0 {
 				switch {
 				case day.Count >= 20:
-					displayLevel = 4
+					lvl = 4
 				case day.Count >= 10:
-					displayLevel = 3
+					lvl = 3
 				case day.Count >= 5:
-					displayLevel = 2
+					lvl = 2
 				default:
-					displayLevel = 1
+					lvl = 1
 				}
 			}
-			switch displayLevel {
-			case 0:
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#1a1a2e")).Render("▪ "))
-			case 1:
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#0e4429")).Render("▪ "))
-			case 2:
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#006d32")).Render("▪ "))
-			case 3:
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#26a641")).Render("▪ "))
-			default:
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#39d353")).Render("▪ "))
+			if lvl > 4 {
+				lvl = 4
 			}
+			rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[lvl]).Render("■ "))
 		}
-		gridLines = append(gridLines, rowSb.String())
+		gridLines = append(gridLines, label+rowSb.String())
 	}
 
 	grid := strings.Join(gridLines, "\n")
 
-	// Streak callout
+	// Legend
+	legend := dim("less ") +
+		lipgloss.NewStyle().Foreground(shades[0]).Render("■ ") +
+		lipgloss.NewStyle().Foreground(shades[1]).Render("■ ") +
+		lipgloss.NewStyle().Foreground(shades[2]).Render("■ ") +
+		lipgloss.NewStyle().Foreground(shades[3]).Render("■ ") +
+		lipgloss.NewStyle().Foreground(shades[4]).Render("■") +
+		dim(" more")
+
 	streak := ""
 	if s.LongestStreak > 0 {
-		streakNum := bigText(fmt.Sprintf("%d", s.LongestStreak), ColorGreen)
-		streak = streakNum + mutedText(" day streak") +
-			dimText(fmt.Sprintf("  %s → %s", s.StreakStart.Format("Jan 2"), s.StreakEnd.Format("Jan 2")))
+		streak = bold(fmt.Sprintf("%d", s.LongestStreak), ColorGreen) +
+			muted(" day streak  ") +
+			dim(s.StreakStart.Format("Jan 2")+" → "+s.StreakEnd.Format("Jan 2"))
 	}
 
 	inner := strings.Join([]string{
 		"",
-		headingStyled,
+		h,
 		"",
 		grid,
+		"",
+		legend,
+		"",
+		divider(60),
 		"",
 		streak,
 		"",
@@ -382,6 +383,10 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	return panel(inner, ColorGreen, width)
 }
+
+// ---------------------------------------------------------------------------
+// Slide 4: Most Chaotic Day
+// ---------------------------------------------------------------------------
 
 func renderChaos(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
@@ -395,43 +400,60 @@ func renderChaos(s github.Stats, anim AnimState, width int) string {
 	}
 	quote := quotes[s.BusiestDate.Day()%len(quotes)]
 
-	heading := lipgloss.NewStyle().Foreground(ColorRed).Bold(true).Render("YOUR MOST CHAOTIC DAY")
+	h := heading("YOUR MOST CHAOTIC DAY", ColorRed)
 
 	date := TypewriterAnimation(s.BusiestDate.Format("January 2, 2006"), p)
-	dateStyled := lipgloss.NewStyle().Foreground(ColorWhite).Bold(true).Render(date)
 
 	count := CounterAnimation(s.BusiestCount, p)
-	countStyled := lipgloss.NewStyle().Foreground(ColorRed).Bold(true).Render(fmt.Sprintf("%d", count))
-	countLine := countStyled + mutedText(" contributions")
 
-	quoteStyled := lipgloss.NewStyle().Foreground(ColorDim).Italic(true).Render(fmt.Sprintf("« %s »", quote))
+	// Big dramatic number
+	countStr := bold(fmt.Sprintf("  %d  ", count), lipgloss.Color("#0d1117"))
+	countPill := lipgloss.NewStyle().
+		Background(ColorRed).
+		Foreground(lipgloss.Color("#0d1117")).
+		Bold(true).
+		Padding(0, 3).
+		Render(fmt.Sprintf(" %d contributions ", count))
+
+	_ = countStr
 
 	inner := strings.Join([]string{
 		"",
-		heading,
+		h,
 		"",
 		"",
-		dateStyled,
+		bold(date, ColorWhite),
 		"",
-		countLine,
+		countPill,
 		"",
 		"",
-		quoteStyled,
+		italic("« " + quote + " »"),
 		"",
 	}, "\n")
 
 	return panel(inner, ColorRed, width)
 }
 
+// ---------------------------------------------------------------------------
+// Slide 5: When You Code
+// ---------------------------------------------------------------------------
+
 func renderClock(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	heading := GradientText("WHEN YOU CODE", ColorPurple, ColorPink)
-	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+	h := heading("WHEN YOU CODE", ColorPurple)
 
-	labels := [4]string{"Morning   ", "Afternoon ", "Evening   ", "Night     "}
-	icons := [4]string{"☀️ ", "🌤 ", "🌙", "🌑"}
-	colors := [4]lipgloss.Color{ColorYellow, ColorCyan, ColorPurple, ColorPink}
+	type timeSlot struct {
+		label string
+		icon  string
+		color lipgloss.Color
+	}
+	slots := [4]timeSlot{
+		{"Morning    06─12", "◑", ColorYellow},
+		{"Afternoon  12─18", "◉", ColorCyan},
+		{"Evening    18─00", "◗", ColorPurple},
+		{"Night      00─06", "○", ColorPink},
+	}
 
 	maxVal := 1
 	total := 0
@@ -442,7 +464,7 @@ func renderClock(s github.Stats, anim AnimState, width int) string {
 		}
 	}
 
-	barWidth := 30
+	barWidth := 25
 
 	var rows []string
 	for i, count := range s.TimeBlocks {
@@ -458,27 +480,24 @@ func renderClock(s github.Stats, anim AnimState, width int) string {
 			pct = float64(count) / float64(total) * 100
 		}
 
-		icon := icons[i]
-		label := lipgloss.NewStyle().Foreground(colors[i]).Bold(true).Render(labels[i])
-		bar := RenderBar(filled, colors[i]) + RenderBarEmpty(empty)
-		pctStr := dimText(fmt.Sprintf(" %4.0f%%", pct))
+		icon := lipgloss.NewStyle().Foreground(slots[i].color).Render(slots[i].icon)
+		label := lipgloss.NewStyle().Foreground(slots[i].color).Width(20).Render(slots[i].label)
+		bar := RenderBar(filled, slots[i].color) + RenderBarEmpty(empty)
+		pctStr := dim(fmt.Sprintf("  %4.0f%%", pct))
 
-		rows = append(rows, icon+" "+label+" "+bar+pctStr)
+		rows = append(rows, " "+icon+" "+label+" "+bar+pctStr)
 	}
 
-	divider := accentLine(50, ColorDim)
+	// Verdict pill
+	verdictPill := pill(" "+s.TimeLabel+" ", lipgloss.Color("#0d1117"), ColorPurple)
 
-	// Verdict
-	verdictText := s.TimeLabel
-	verdictStyled := lipgloss.NewStyle().Foreground(ColorPurple).Bold(true).Render(verdictText)
-
-	footnote := dimText("based on your last 30 days")
+	footnote := dim("based on your last 30 days")
 
 	inner := strings.Join([]string{
 		"",
-		headingStyled,
+		h,
 		"",
-		divider,
+		divider(60),
 		"",
 	}, "\n")
 	for _, r := range rows {
@@ -486,9 +505,10 @@ func renderClock(s github.Stats, anim AnimState, width int) string {
 	}
 	inner += strings.Join([]string{
 		"",
-		divider,
+		divider(60),
 		"",
-		verdictStyled,
+		verdictPill,
+		"",
 		footnote,
 		"",
 	}, "\n")
@@ -496,13 +516,16 @@ func renderClock(s github.Stats, anim AnimState, width int) string {
 	return panel(inner, ColorPurple, width)
 }
 
+// ---------------------------------------------------------------------------
+// Slide 6: Top Languages
+// ---------------------------------------------------------------------------
+
 func renderLanguages(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	heading := GradientText("YOUR TOP LANGUAGES", ColorYellow, ColorRed)
-	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+	h := heading("YOUR TOP LANGUAGES", ColorYellow)
 
-	barWidth := 30
+	barWidth := 25
 	limit := 5
 	if len(s.Languages) < limit {
 		limit = len(s.Languages)
@@ -520,28 +543,27 @@ func renderLanguages(s github.Stats, anim AnimState, width int) string {
 		filled := int(float64(barWidth) * animPct / 100.0)
 		empty := barWidth - filled
 
-		nameStyled := lipgloss.NewStyle().Foreground(color).Bold(true).Width(12).Render(lang.Name)
+		rank := dim(fmt.Sprintf("#%d ", i+1))
+		name := lipgloss.NewStyle().Foreground(color).Bold(true).Width(12).Render(lang.Name)
 		bar := RenderBar(filled, color) + RenderBarEmpty(empty)
-		pctStr := dimText(fmt.Sprintf(" %5.1f%%", lang.Percent))
+		pctStr := dim(fmt.Sprintf("  %5.1f%%", lang.Percent))
 
-		rows = append(rows, nameStyled+" "+bar+pctStr)
+		rows = append(rows, " "+rank+name+" "+bar+pctStr)
 	}
 
-	// Fun subtitle
+	// Subtitle
 	subtitle := ""
 	if len(s.Languages) >= 4 && s.Languages[0].Percent < 40 {
-		subtitle = mutedText("polyglot energy ✨")
+		subtitle = italic("polyglot energy")
 	} else if len(s.Languages) > 0 && s.Languages[0].Percent > 70 {
-		subtitle = mutedText(s.Languages[0].Name + " loyalist 💪")
+		subtitle = italic(s.Languages[0].Name + " loyalist")
 	}
-
-	divider := accentLine(50, ColorDim)
 
 	inner := strings.Join([]string{
 		"",
-		headingStyled,
+		h,
 		"",
-		divider,
+		divider(60),
 		"",
 	}, "\n")
 	for _, r := range rows {
@@ -549,104 +571,129 @@ func renderLanguages(s github.Stats, anim AnimState, width int) string {
 	}
 	inner += strings.Join([]string{
 		"",
-		divider,
+		divider(60),
 		"",
 		subtitle,
 		"",
 	}, "\n")
 
-	return panel(inner, ColorRed, width)
+	return panel(inner, ColorYellow, width)
 }
+
+// ---------------------------------------------------------------------------
+// Slide 7: Villain Arc
+// ---------------------------------------------------------------------------
 
 func renderVillain(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	heading := lipgloss.NewStyle().Foreground(ColorCrimson).Bold(true).Render("⚡ VILLAIN ARC ⚡")
+	h := heading("VILLAIN ARC", ColorCrimson)
 
 	count := CounterAnimation(s.VillainCommits, p)
-	countStyled := lipgloss.NewStyle().Foreground(ColorCrimson).Bold(true).Render(fmt.Sprintf("%d", count))
-	countLine := countStyled + mutedText(" commits")
-
 	repo := TypewriterAnimation(s.VillainRepo, p)
-	repoStyled := dimText("to ") + lipgloss.NewStyle().Foreground(ColorWhite).Bold(true).Render(repo)
 
-	quote := lipgloss.NewStyle().Foreground(ColorDim).Italic(true).Render("« obsessed much? »")
-	footnote := dimText("based on your last 30 days")
+	// Big dramatic commit count with background
+	countPill := lipgloss.NewStyle().
+		Background(ColorCrimson).
+		Foreground(lipgloss.Color("#0d1117")).
+		Bold(true).
+		Padding(0, 3).
+		Render(fmt.Sprintf(" %d commits ", count))
+
+	repoLine := dim("to ") + bold(repo, ColorWhite)
 
 	inner := strings.Join([]string{
 		"",
-		heading,
+		h,
+		dim("your most pushed repo"),
 		"",
 		"",
-		countLine,
+		countPill,
 		"",
-		repoStyled,
+		repoLine,
 		"",
 		"",
-		quote,
+		italic("« obsessed much? »"),
 		"",
-		footnote,
+		dim("based on your last 30 days"),
 		"",
 	}, "\n")
 
 	return panel(inner, ColorCrimson, width)
 }
 
+// ---------------------------------------------------------------------------
+// Slide 8: Weekend Warrior
+// ---------------------------------------------------------------------------
+
 func renderWeekend(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	heading := GradientText("WEEKEND WARRIOR", ColorPink, ColorCyan)
-	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
+	h := heading("WEEKEND WARRIOR", ColorPink)
 
 	animPct := s.WeekendPercent * p
-	pctStyled := lipgloss.NewStyle().Foreground(ColorPink).Bold(true).Render(fmt.Sprintf("%.0f%%", animPct))
-	pctLine := pctStyled + mutedText(" of your commits land on weekends")
+
+	// Big percentage with background
+	pctPill := lipgloss.NewStyle().
+		Background(ColorPink).
+		Foreground(lipgloss.Color("#0d1117")).
+		Bold(true).
+		Padding(0, 3).
+		Render(fmt.Sprintf(" %.0f%% ", animPct))
+
+	pctLine := muted("of your commits land on weekends")
 
 	barWidth := 50
 	weekendW := int(float64(barWidth) * animPct / 100.0)
 	weekdayW := barWidth - weekendW
-	bar := RenderBar(weekendW, ColorPink) + RenderBarEmpty(weekdayW)
-	barLabels := dimText("weekdays") + strings.Repeat(" ", barWidth-16) + lipgloss.NewStyle().Foreground(ColorPink).Render("weekends")
+	bar := RenderBarEmpty(weekdayW) + RenderBar(weekendW, ColorPink)
+
+	labelsLine := dim("weekdays") +
+		strings.Repeat(" ", barWidth-16) +
+		lipgloss.NewStyle().Foreground(ColorPink).Render("weekends")
 
 	var verdict string
 	switch {
 	case s.WeekendPercent >= 50:
-		verdict = "you live for the weekend. respect."
+		verdict = "you live for the weekend."
 	case s.WeekendPercent >= 25:
 		verdict = "work hard, push harder."
 	default:
-		verdict = "strictly business. nice."
+		verdict = "strictly business."
 	}
-	verdictStyled := lipgloss.NewStyle().Foreground(ColorDim).Italic(true).Render(verdict)
 
 	inner := strings.Join([]string{
 		"",
-		headingStyled,
+		h,
 		"",
 		"",
+		pctPill,
 		pctLine,
 		"",
 		bar,
-		barLabels,
+		labelsLine,
 		"",
+		divider(50),
 		"",
-		verdictStyled,
+		italic(verdict),
 		"",
 	}, "\n")
 
 	return panel(inner, ColorPink, width)
 }
 
+// ---------------------------------------------------------------------------
+// Slide 9: The Novel
+// ---------------------------------------------------------------------------
+
 func renderNovel(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	heading := GradientText("THE NOVEL", ColorYellow, ColorPurple)
-	headingStyled := lipgloss.NewStyle().Bold(true).Render(heading)
-	sub := mutedText("your longest commit message")
+	h := heading("THE NOVEL", ColorYellow)
+	sub := dim("your longest commit message")
 
-	// Message box
-	msgWidth := 60
-	wrapped := wordWrap(s.LongestMessage, msgWidth-4)
+	msgWidth := 58
+	wrapped := wordWrap(s.LongestMessage, msgWidth-6)
 	if len(wrapped) > 300 {
 		wrapped = wrapped[:300] + "..."
 	}
@@ -654,49 +701,56 @@ func renderNovel(s github.Stats, anim AnimState, width int) string {
 
 	msgBox := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(ColorYellow).
-		Foreground(ColorYellow).
+		BorderForeground(lipgloss.Color("#21262d")).
+		Foreground(ColorWhite).
 		Padding(1, 2).
 		Width(msgWidth).
 		Render(animated)
 
-	charCount := bigText(fmt.Sprintf("%d", s.LongestMessageLen), ColorYellow) + mutedText(" characters")
-	repo := dimText("in ") + lipgloss.NewStyle().Foreground(ColorWhite).Render(s.LongestMessageRepo)
-	quote := lipgloss.NewStyle().Foreground(ColorDim).Italic(true).Render("that's not a commit, that's a blog post.")
-	footnote := dimText("based on your last 30 days")
+	// Stats line
+	charPill := pill(fmt.Sprintf(" %d chars ", s.LongestMessageLen), lipgloss.Color("#0d1117"), ColorYellow)
+	repoLine := dim("in ") + bold(s.LongestMessageRepo, ColorWhite)
 
 	inner := strings.Join([]string{
 		"",
-		headingStyled,
+		h,
 		sub,
 		"",
 		msgBox,
 		"",
-		charCount,
-		repo,
+		charPill + "  " + repoLine,
 		"",
-		quote,
-		footnote,
+		italic("that's not a commit, that's a blog post."),
+		dim("based on your last 30 days"),
 		"",
 	}, "\n")
 
 	return panel(inner, ColorYellow, width)
 }
 
+// ---------------------------------------------------------------------------
+// Slide 10: Developer Personality (Finale)
+// ---------------------------------------------------------------------------
+
 func renderPersonality(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	label := dimText("you are")
+	// Small "you are" label
+	label := dim("you are")
 
+	// BIG archetype name
 	archetype := TypewriterAnimation(s.Archetype, p)
-	archetypeGrad := GradientText(strings.ToUpper(archetype), ColorCyan, ColorPink)
-	archetypeStyled := lipgloss.NewStyle().Bold(true).Render(archetypeGrad)
+	archetypeName := strings.ToUpper(archetype)
+	archetypeStyled := lipgloss.NewStyle().
+		Foreground(ColorCyan).
+		Bold(true).
+		Render(archetypeName)
 
 	// Trait pills with colored backgrounds
-	pillColors := [3]struct{ fg, bg lipgloss.Color }{
-		{lipgloss.Color("#1a1a2e"), ColorPurple},
-		{lipgloss.Color("#1a1a2e"), ColorPink},
-		{lipgloss.Color("#1a1a2e"), ColorCyan},
+	pillDefs := [3]struct{ fg, bg lipgloss.Color }{
+		{lipgloss.Color("#0d1117"), ColorPurple},
+		{lipgloss.Color("#0d1117"), ColorPink},
+		{lipgloss.Color("#0d1117"), ColorCyan},
 	}
 	var pills []string
 	for i, trait := range s.Traits {
@@ -705,16 +759,19 @@ func renderPersonality(s github.Stats, anim AnimState, width int) string {
 			continue
 		}
 		name := strings.TrimPrefix(t, "The ")
-		pills = append(pills, pill(strings.ToLower(name), pillColors[i].fg, pillColors[i].bg))
+		pills = append(pills, pill(" "+strings.ToLower(name)+" ", pillDefs[i].fg, pillDefs[i].bg))
 	}
 	pillRow := strings.Join(pills, "  ")
 
-	divider := accentLine(40, ColorDim)
+	outro := muted("Your " + s.YearLabel + ", Unwrapped.")
 
-	outro := mutedText("Your " + s.YearLabel + ", Unwrapped.")
-	gifHint := lipgloss.NewStyle().Foreground(ColorCyan).Render("press ") +
-		lipgloss.NewStyle().Foreground(ColorCyan).Bold(true).Render("g") +
-		lipgloss.NewStyle().Foreground(ColorCyan).Render(" to export as GIF")
+	gifBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#21262d")).
+		Padding(0, 2).
+		Render(
+			dim("press ") + bold("g", ColorCyan) + dim(" to export as GIF"),
+		)
 
 	inner := strings.Join([]string{
 		"",
@@ -726,11 +783,11 @@ func renderPersonality(s github.Stats, anim AnimState, width int) string {
 		pillRow,
 		"",
 		"",
-		divider,
+		divider(40),
 		"",
 		outro,
 		"",
-		gifHint,
+		gifBox,
 		"",
 	}, "\n")
 

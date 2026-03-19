@@ -176,12 +176,12 @@ func (m Model) View() string {
 	slideContent := RenderSlide(slideID, m.stats, m.anim, m.width, slideHeight)
 
 	// Bottom bar
-	counter := dimText(fmt.Sprintf(" %d/%d", m.current+1, len(m.slides)))
+	counter := dim(fmt.Sprintf(" %d/%d", m.current+1, len(m.slides)))
 	var hint string
 	if m.autoMode {
-		hint = dimText("auto ")
+		hint = dim("auto ")
 	} else {
-		hint = dimText("← → navigate · a auto · q quit ")
+		hint = dim("← → navigate · a auto · q quit ")
 	}
 
 	bottomBar := lipgloss.JoinHorizontal(lipgloss.Top,
