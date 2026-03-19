@@ -324,7 +324,7 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 				continue
 			}
 			if idx >= revealed {
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("■ "))
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("██"))
 				continue
 			}
 			day := s.Calendar[idx]
@@ -344,7 +344,7 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 			if lvl > 4 {
 				lvl = 4
 			}
-			rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[lvl]).Render("■ "))
+			rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[lvl]).Render("██"))
 		}
 		gridLines = append(gridLines, label+rowSb.String())
 	}
@@ -353,11 +353,11 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	// Legend
 	legend := dim("less ") +
-		lipgloss.NewStyle().Foreground(shades[0]).Render("■ ") +
-		lipgloss.NewStyle().Foreground(shades[1]).Render("■ ") +
-		lipgloss.NewStyle().Foreground(shades[2]).Render("■ ") +
-		lipgloss.NewStyle().Foreground(shades[3]).Render("■ ") +
-		lipgloss.NewStyle().Foreground(shades[4]).Render("■") +
+		lipgloss.NewStyle().Foreground(shades[0]).Render("██") + " " +
+		lipgloss.NewStyle().Foreground(shades[1]).Render("██") + " " +
+		lipgloss.NewStyle().Foreground(shades[2]).Render("██") + " " +
+		lipgloss.NewStyle().Foreground(shades[3]).Render("██") + " " +
+		lipgloss.NewStyle().Foreground(shades[4]).Render("██") +
 		dim(" more")
 
 	streak := ""
@@ -406,26 +406,18 @@ func renderChaos(s github.Stats, anim AnimState, width int) string {
 
 	count := CounterAnimation(s.BusiestCount, p)
 
-	// Big dramatic number
-	countStr := bold(fmt.Sprintf("  %d  ", count), lipgloss.Color("#0d1117"))
-	countPill := lipgloss.NewStyle().
-		Background(ColorRed).
-		Foreground(lipgloss.Color("#0d1117")).
-		Bold(true).
-		Padding(0, 3).
-		Render(fmt.Sprintf(" %d contributions ", count))
-
-	_ = countStr
+	// Big dramatic ASCII art number
+	bigNum := RenderBigNumber(fmt.Sprintf("%d", count), ColorRed)
+	contribLabel := muted("contributions in a single day")
 
 	inner := strings.Join([]string{
 		"",
 		h,
 		"",
-		"",
 		bold(date, ColorWhite),
 		"",
-		countPill,
-		"",
+		bigNum,
+		contribLabel,
 		"",
 		italic("« " + quote + " »"),
 		"",
@@ -738,13 +730,15 @@ func renderPersonality(s github.Stats, anim AnimState, width int) string {
 	// Small "you are" label
 	label := dim("you are")
 
-	// BIG archetype name
+	// BIG archetype name with background highlight
 	archetype := TypewriterAnimation(s.Archetype, p)
 	archetypeName := strings.ToUpper(archetype)
 	archetypeStyled := lipgloss.NewStyle().
-		Foreground(ColorCyan).
+		Foreground(lipgloss.Color("#0d1117")).
+		Background(ColorCyan).
 		Bold(true).
-		Render(archetypeName)
+		Padding(0, 3).
+		Render(" " + archetypeName + " ")
 
 	// Trait pills with colored backgrounds
 	pillDefs := [3]struct{ fg, bg lipgloss.Color }{
