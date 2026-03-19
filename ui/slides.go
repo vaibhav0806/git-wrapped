@@ -237,37 +237,27 @@ func renderNumbers(s github.Stats, anim AnimState, width int) string {
 
 	h := heading("YOUR YEAR IN NUMBERS", ColorCyan)
 
-	// Each stat: big number on top, label below, inside a mini box
-	statStyle := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#21262d")).
-		Padding(1, 2).
-		Width(20).
-		Align(lipgloss.Center)
+	// Hero stat: contributions in big ASCII digits
+	bigContribs := RenderBigNumber(fmt.Sprintf("%d", contribs), ColorCyan)
+	contribLabel := dim("contributions")
 
-	stat := func(val string, label string, color lipgloss.Color) string {
-		return statStyle.Render(
-			bold(val, color) + "\n" + dim(label),
-		)
-	}
-
-	row := lipgloss.JoinHorizontal(lipgloss.Center,
-		stat(fmt.Sprintf("%d", contribs), "contributions", ColorCyan),
-		"  ",
-		stat(fmt.Sprintf("%d", repos), "repositories", ColorPurple),
-		"  ",
-		stat(fmt.Sprintf("%d", stars), "stars earned", ColorYellow),
-	)
+	// Secondary stats on one line
+	secondaryLine := bold(fmt.Sprintf("%d", repos), ColorPurple) + dim(" repos") +
+		muted("    ·    ") +
+		bold(fmt.Sprintf("%d", stars), ColorYellow) + dim(" stars earned")
 
 	inner := strings.Join([]string{
 		"",
 		h,
 		"",
-		divider(60),
+		divider(50),
 		"",
-		row,
+		bigContribs,
+		contribLabel,
 		"",
-		divider(60),
+		divider(50),
+		"",
+		secondaryLine,
 		"",
 	}, "\n")
 
