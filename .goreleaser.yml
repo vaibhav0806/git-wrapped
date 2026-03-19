@@ -23,6 +23,7 @@ brews:
   - repository:
       owner: vaibhav0806
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
     homepage: https://github.com/vaibhav0806/git-wrapped
     description: "Spotify Wrapped, but for your GitHub year"
     license: MIT
