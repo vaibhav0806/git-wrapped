@@ -617,26 +617,78 @@ func renderWeekend(s github.Stats, anim AnimState, width int) string {
 
 	h := heading("WEEKEND WARRIOR", ColorPink)
 
+	// Compute per-day-of-week contribution counts from calendar
+	dayCounts := [7]int{} // 0=Sun, 1=Mon, ..., 6=Sat
+	for _, d := range s.Calendar {
+		if d.Count > 0 {
+			dayCounts[d.Date.Weekday()] += d.Count
+		}
+	}
+
+	// Big percentage
 	animPct := s.WeekendPercent * p
+	bigPct := RenderBigNumber(fmt.Sprintf("%.0f", animPct), ColorPink)
 
-	// Big percentage with background
-	pctPill := lipgloss.NewStyle().
-		Background(ColorPink).
-		Foreground(lipgloss.Color("#0d1117")).
-		Bold(true).
-		Padding(0, 3).
-		Render(fmt.Sprintf(" %.0f%% ", animPct))
+	// Vertical bar chart — 7 columns for each day of week
+	// Reorder to Mon-Sun for display
+	displayOrder := [7]int{1, 2, 3, 4, 5, 6, 0} // Mon, Tue, Wed, Thu, Fri, Sat, Sun
+	dayNames := [7]string{"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"}
 
-	pctLine := muted("of your commits land on weekends")
+	maxCount := 1
+	for _, c := range dayCounts {
+		if c > maxCount {
+			maxCount = c
+		}
+	}
 
-	barWidth := 50
-	weekendW := int(float64(barWidth) * animPct / 100.0)
-	weekdayW := barWidth - weekendW
-	bar := RenderBarEmpty(weekdayW) + RenderBar(weekendW, ColorPink)
+	barHeight := 8
+	colWidth := 6 // chars per column
 
-	labelsLine := dim("weekdays") +
-		strings.Repeat(" ", barWidth-16) +
-		lipgloss.NewStyle().Foreground(ColorPink).Render("weekends")
+	// Build rows top-down
+	var chartRows []string
+	for row := barHeight; row >= 1; row-- {
+		var rowSb strings.Builder
+		for i, dayIdx := range displayOrder {
+			threshold := float64(row) / float64(barHeight)
+			animated := float64(dayCounts[dayIdx]) * p
+			fillPct := animated / float64(maxCount)
+
+			if i > 0 {
+				rowSb.WriteString(" ")
+			}
+
+			if fillPct >= threshold {
+				// Weekend days (Sat=5, Sun=6 in displayOrder → indices 5,6) in pink
+				var color lipgloss.Color
+				if dayIdx == 0 || dayIdx == 6 { // Sun or Sat
+					color = ColorPink
+				} else {
+					color = lipgloss.Color("#21262d")
+				}
+				rowSb.WriteString(lipgloss.NewStyle().Background(color).Render(strings.Repeat(" ", colWidth)))
+			} else {
+				rowSb.WriteString(strings.Repeat(" ", colWidth))
+			}
+		}
+		chartRows = append(chartRows, rowSb.String())
+	}
+
+	// Day labels row
+	var labelRow strings.Builder
+	for i, name := range dayNames {
+		if i > 0 {
+			labelRow.WriteString(" ")
+		}
+		var style lipgloss.Style
+		if i >= 5 { // Sat, Sun
+			style = lipgloss.NewStyle().Foreground(ColorPink).Bold(true).Width(colWidth).Align(lipgloss.Center)
+		} else {
+			style = lipgloss.NewStyle().Foreground(ColorDim).Width(colWidth).Align(lipgloss.Center)
+		}
+		labelRow.WriteString(style.Render(name))
+	}
+
+	chart := strings.Join(chartRows, "\n")
 
 	var verdict string
 	switch {
@@ -652,12 +704,13 @@ func renderWeekend(s github.Stats, anim AnimState, width int) string {
 		"",
 		h,
 		"",
+		bigPct,
+		muted("percent on weekends"),
 		"",
-		pctPill,
-		pctLine,
+		divider(50),
 		"",
-		bar,
-		labelsLine,
+		chart,
+		labelRow.String(),
 		"",
 		divider(50),
 		"",
