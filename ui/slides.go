@@ -288,7 +288,7 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	// GitHub-style green shades
 	shades := [5]lipgloss.Color{
-		lipgloss.Color("#161b22"), // 0: empty
+		lipgloss.Color("#21262d"), // 0: empty (visible against #161b22 panel bg)
 		lipgloss.Color("#0e4429"), // 1: low
 		lipgloss.Color("#006d32"), // 2: med
 		lipgloss.Color("#26a641"), // 3: high
@@ -296,31 +296,15 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 	}
 
 	cols := 53
-	boxWidth := width - 12
-	if boxWidth > 76 {
-		boxWidth = 76
-	}
-	maxCols := (boxWidth - 4) / 2
-	if cols > maxCols {
-		cols = maxCols
-	}
 
-	dayLabels := [7]string{"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"}
-
+	// Render grid: 7 rows x cols, no day labels (too cluttered)
 	var gridLines []string
 	for row := 0; row < 7; row++ {
-		label := dim(dayLabels[row]) + " "
-		if row%2 == 0 {
-			label = dim(dayLabels[row]) + " "
-		} else {
-			label = "    " // only show every other day label
-		}
-
 		var rowSb strings.Builder
 		for col := 0; col < cols; col++ {
 			idx := row*53 + col
 			if idx >= totalCells {
-				rowSb.WriteString("  ")
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("██"))
 				continue
 			}
 			if idx >= revealed {
@@ -346,7 +330,7 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 			}
 			rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[lvl]).Render("██"))
 		}
-		gridLines = append(gridLines, label+rowSb.String())
+		gridLines = append(gridLines, rowSb.String())
 	}
 
 	grid := strings.Join(gridLines, "\n")
