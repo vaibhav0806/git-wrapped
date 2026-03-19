@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -152,7 +153,7 @@ func (m Model) prevSlide() Model {
 	return m
 }
 
-// View renders the current slide and bottom bar.
+// View renders the current slide and bottom bar with full-screen background.
 func (m Model) View() string {
 	if m.tooSmall {
 		warning := fmt.Sprintf(
@@ -166,7 +167,7 @@ func (m Model) View() string {
 	}
 
 	// Reserve 1 line for the bottom bar.
-	slideHeight := m.height - 1
+	slideHeight := m.height - 2
 	if slideHeight < 1 {
 		slideHeight = 1
 	}
@@ -174,26 +175,49 @@ func (m Model) View() string {
 	slideID := m.slides[m.current]
 	slideContent := RenderSlide(slideID, m.stats, m.anim, m.width, slideHeight)
 
-	// Bottom bar: slide counter + controls hint.
-	counter := fmt.Sprintf("%d/%d", m.current+1, len(m.slides))
-	counterStr := LabelStyle.Render(counter)
-
+	// Bottom bar
+	counter := dimText(fmt.Sprintf(" %d/%d", m.current+1, len(m.slides)))
 	var hint string
 	if m.autoMode {
-		hint = LabelStyle.Render("auto")
+		hint = dimText("auto ")
 	} else {
-		hint = LabelStyle.Render("← → navigate  a auto  q quit")
+		hint = dimText("← → navigate · a auto · q quit ")
 	}
 
-	barStyle := lipgloss.NewStyle().Width(m.width)
-	bottomBar := barStyle.Render(
-		lipgloss.JoinHorizontal(lipgloss.Top,
-			lipgloss.NewStyle().Width(m.width/2).Align(lipgloss.Left).Render(counterStr),
-			lipgloss.NewStyle().Width(m.width-m.width/2).Align(lipgloss.Right).Render(hint),
-		),
+	bottomBar := lipgloss.JoinHorizontal(lipgloss.Top,
+		lipgloss.NewStyle().Width(m.width/2).Align(lipgloss.Left).Render(counter),
+		lipgloss.NewStyle().Width(m.width-m.width/2).Align(lipgloss.Right).Render(hint),
 	)
 
-	return slideContent + "\n" + bottomBar
+	// Combine content + bar
+	raw := slideContent + "\n" + bottomBar
+
+	// Fill the entire terminal with background color.
+	// Pad each line to full width, and pad to full height.
+	lines := strings.Split(raw, "\n")
+	var sb strings.Builder
+	bgStyle := lipgloss.NewStyle().Background(ColorBg)
+	for i := 0; i < m.height; i++ {
+		if i < len(lines) {
+			// Pad line to full width with background
+			line := lines[i]
+			visWidth := lipgloss.Width(line)
+			pad := m.width - visWidth
+			if pad < 0 {
+				pad = 0
+			}
+			sb.WriteString(line)
+			if pad > 0 {
+				sb.WriteString(bgStyle.Render(strings.Repeat(" ", pad)))
+			}
+		} else {
+			sb.WriteString(bgStyle.Render(strings.Repeat(" ", m.width)))
+		}
+		if i < m.height-1 {
+			sb.WriteByte('\n')
+		}
+	}
+	return sb.String()
 }
 
 // ExportRequested reports whether the user requested a GIF export.

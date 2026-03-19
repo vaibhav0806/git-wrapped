@@ -88,7 +88,7 @@ func RenderSlide(id SlideID, s github.Stats, anim AnimState, width, height int) 
 // Helpers
 // ---------------------------------------------------------------------------
 
-// panel wraps content in a centered bordered box with accent color.
+// panel wraps content in a centered bordered box with accent color and dark background.
 func panel(content string, accent lipgloss.Color, width int) string {
 	boxWidth := width - 4
 	if boxWidth > 80 {
@@ -97,6 +97,7 @@ func panel(content string, accent lipgloss.Color, width int) string {
 	box := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(accent).
+		Background(ColorPanel).
 		Padding(1, 3).
 		Width(boxWidth).
 		Align(lipgloss.Center).
@@ -185,40 +186,70 @@ func wordWrap(s string, maxWidth int) string {
 // Slide renderers
 // ---------------------------------------------------------------------------
 
+// ASCII art block letters for "DEV WRAPPED"
+var asciiDev = []string{
+	"██████╗ ███████╗██╗   ██╗",
+	"██╔══██╗██╔════╝██║   ██║",
+	"██║  ██║█████╗  ██║   ██║",
+	"██║  ██║██╔══╝  ╚██╗ ██╔╝",
+	"██████╔╝███████╗ ╚████╔╝ ",
+	"╚═════╝ ╚══════╝  ╚═══╝  ",
+}
+
+var asciiWrapped = []string{
+	"██╗    ██╗██████╗  █████╗ ██████╗ ██████╗ ███████╗██████╗ ",
+	"██║    ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗",
+	"██║ █╗ ██║██████╔╝███████║██████╔╝██████╔╝█████╗  ██║  ██║",
+	"██║███╗██║██╔══██╗██╔══██║██╔═══╝ ██╔═══╝ ██╔══╝  ██║  ██║",
+	"╚███╔███╔╝██║  ██║██║  ██║██║     ██║     ███████╗██████╔╝",
+	" ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝     ╚══════╝╚═════╝ ",
+}
+
 func renderTitle(s github.Stats, anim AnimState, width int) string {
 	p := anim.Progress()
 
-	// Big sparkle decorations
-	sparkle := dimText("✦  ✦  ✦")
+	// Render ASCII art with gradient coloring per line
+	var devLines []string
+	for _, line := range asciiDev {
+		// Reveal with progress
+		chars := int(float64(len([]rune(line))) * p)
+		if chars > len([]rune(line)) {
+			chars = len([]rune(line))
+		}
+		visible := string([]rune(line)[:chars])
+		devLines = append(devLines, lipgloss.NewStyle().Foreground(ColorCyan).Bold(true).Render(visible))
+	}
+	devArt := strings.Join(devLines, "\n")
 
-	// Main title with gradient
-	title := GradientText("  D E V   W R A P P E D  ", ColorRed, ColorCyan)
-	titleStyled := lipgloss.NewStyle().Bold(true).Render(title)
+	var wrappedLines []string
+	for _, line := range asciiWrapped {
+		chars := int(float64(len([]rune(line))) * p)
+		if chars > len([]rune(line)) {
+			chars = len([]rune(line))
+		}
+		visible := string([]rune(line)[:chars])
+		wrappedLines = append(wrappedLines, lipgloss.NewStyle().Foreground(ColorPurple).Bold(true).Render(visible))
+	}
+	wrappedArt := strings.Join(wrappedLines, "\n")
 
-	// Year with accent
-	year := bigText(s.YearLabel, ColorCyan)
+	// Year label
+	year := bigText(s.YearLabel, ColorPink)
 
 	// Username with typewriter
 	handle := TypewriterAnimation("@"+s.Username, p)
-	handleStyled := lipgloss.NewStyle().Foreground(ColorPurple).Bold(true).Render(handle)
+	handleStyled := lipgloss.NewStyle().Foreground(ColorMuted).Render(handle)
 
-	// Subtitle
-	sub := mutedText("your year in code")
+	sub := dimText("your year in code")
 
 	inner := strings.Join([]string{
 		"",
-		sparkle,
+		devArt,
+		wrappedArt,
 		"",
-		"",
-		titleStyled,
 		year,
 		"",
-		"",
 		handleStyled,
-		"",
 		sub,
-		"",
-		sparkle,
 		"",
 	}, "\n")
 

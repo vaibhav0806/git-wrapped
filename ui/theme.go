@@ -20,7 +20,8 @@ const (
 	ColorWhite   = lipgloss.Color("#e8e8e8")
 	ColorDim     = lipgloss.Color("#555555")
 	ColorMuted   = lipgloss.Color("#888888")
-	ColorBg      = lipgloss.Color("#08080c")
+	ColorBg      = lipgloss.Color("#0d1117")
+	ColorPanel   = lipgloss.Color("#161b22")
 )
 
 // SlideAccents maps slide index to accent color.
