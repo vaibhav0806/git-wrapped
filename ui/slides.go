@@ -283,6 +283,10 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	h := heading("CONTRIBUTION HEATMAP", ColorGreen)
 
+	// Total contributions as a big number
+	totalCount := CounterAnimation(s.TotalContributions, p)
+	totalLine := bold(fmt.Sprintf("%d", totalCount), ColorGreen) + dim(" contributions in the last year")
+
 	totalCells := len(s.Calendar)
 	revealed := HeatmapAnimation(totalCells, p)
 
@@ -297,7 +301,29 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	cols := 53
 
-	// Render grid: 7 rows x cols, no day labels (too cluttered)
+	// Month labels across top — check row 0 dates for month boundaries
+	var monthLine strings.Builder
+	lastMonth := -1
+	for col := 0; col < cols; col++ {
+		idx := col // row 0 (Sunday of each week)
+		if idx < totalCells {
+			m := int(s.Calendar[idx].Date.Month())
+			if m != lastMonth {
+				abbr := s.Calendar[idx].Date.Format("Jan")
+				if len(abbr) >= 1 {
+					monthLine.WriteString(string(abbr[0]))
+				}
+				lastMonth = m
+			} else {
+				monthLine.WriteString(" ")
+			}
+		} else {
+			monthLine.WriteString(" ")
+		}
+	}
+	monthLabels := dim(monthLine.String())
+
+	// Render grid: 7 rows x cols
 	var gridLines []string
 	for row := 0; row < 7; row++ {
 		var rowSb strings.Builder
@@ -354,12 +380,14 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 	inner := strings.Join([]string{
 		"",
 		h,
+		totalLine,
 		"",
+		monthLabels,
 		grid,
 		"",
 		legend,
 		"",
-		divider(60),
+		divider(53),
 		"",
 		streak,
 		"",
