@@ -266,9 +266,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tick()
 
 		case phasePresenting:
-			if !m.anim.Done {
-				m.anim.Advance()
-			} else if m.autoPlay {
+			m.anim.Advance()
+			if m.anim.Done && m.autoPlay {
 				extraNeeded := (AutoAdvanceMs - AnimDurationMs) / AnimIntervalMs
 				m.extraTicks++
 				if m.extraTicks >= extraNeeded {
