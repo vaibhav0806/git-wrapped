@@ -30,6 +30,7 @@ func ComputeStats(user User, events []Event, repos []Repo, calendar []Contributi
 		s.TotalStars += r.StargazersCount
 	}
 	if len(calendar) > 0 {
+		s.Calendar = calendar
 		computeCalendarStats(&s, calendar)
 	}
 	if len(events) > 0 {

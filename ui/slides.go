@@ -176,7 +176,7 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 	for row := 0; row < 7; row++ {
 		var rowSb strings.Builder
 		for col := 0; col < cols; col++ {
-			idx := col*7 + row
+			idx := row*cols + col
 			if idx >= totalCells {
 				rowSb.WriteString("  ")
 				continue
