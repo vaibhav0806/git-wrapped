@@ -16,9 +16,7 @@ func NewAnimState(durationMs int, intervalMs int) AnimState {
 }
 
 func (a *AnimState) Advance() {
-	if a.Tick < a.MaxTicks {
-		a.Tick++
-	}
+	a.Tick++
 	if a.Tick >= a.MaxTicks {
 		a.Done = true
 	}

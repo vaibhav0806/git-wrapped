@@ -729,56 +729,62 @@ var allArchetypes = []string{
 }
 
 func renderPersonality(s github.Stats, anim AnimState, width int) string {
-	p := anim.Progress()
-
-	// Lottery phases:
-	// 0.0 - 0.6: rapid cycling through archetype names (slot machine)
-	// 0.6 - 0.7: land on the final archetype
-	// 0.7 - 1.0: reveal description + outro
+	// This slide uses a longer animation (3x normal) for the lottery effect.
+	// We remap p from the normal 0-1 range across a longer timeline.
+	// The anim runs 0-1 over AnimDurationMs, but we use raw tick count
+	// to extend the lottery phase beyond the normal animation window.
+	// Tick count gives us ~30 ticks per second (50ms interval).
+	// Lottery: 60 ticks (2s), settle: 10 ticks, reveal: staggered after.
+	tick := anim.Tick
+	lotteryEnd := 40   // 2 seconds of cycling
+	settleAt := lotteryEnd + 3
+	descAt := settleAt + 10
+	pillsAt := descAt + 8
+	outroAt := pillsAt + 6
 
 	label := dim("you are")
 
 	var displayName string
 	var nameStyle lipgloss.Style
-	landed := false
+	landed := tick >= lotteryEnd
 
-	if p < 0.6 {
-		// Cycling phase — pick a name based on tick count
-		// Slow down as we approach 0.6 (fewer changes per tick)
-		cycleSpeed := 1 + int((1.0-p/0.6)*5) // 6 down to 1
-		idx := (anim.Tick / cycleSpeed) % len(allArchetypes)
+	if !landed {
+		// Cycling phase — slow down as we approach lotteryEnd
+		progress := float64(tick) / float64(lotteryEnd)
+		cycleSpeed := 1 + int((1.0-progress)*6) // fast → slow
+		if cycleSpeed < 1 {
+			cycleSpeed = 1
+		}
+		idx := (tick / cycleSpeed) % len(allArchetypes)
 		displayName = strings.ToUpper(allArchetypes[idx])
-		// Dim cycling names
 		nameStyle = lipgloss.NewStyle().
-			Foreground(ColorDim).
+			Foreground(ColorMuted).
 			Bold(true)
 	} else {
-		// Landed on final archetype
 		displayName = strings.ToUpper(s.Archetype)
 		nameStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("#0d1117")).
 			Background(ColorCyan).
 			Bold(true).
 			Padding(0, 3)
-		landed = true
 	}
 
 	archetypeStyled := nameStyle.Render(" " + displayName + " ")
 
-	// Description (only after landing)
+	// Description
 	archetypeDesc := ""
-	if landed && p > 0.75 {
+	if tick >= descAt {
 		archetypeDesc = italic(s.ArchetypeDescription)
 	}
 
-	// Trait pills (only after description)
+	// Trait pills
 	pillDefs := [3]struct{ fg, bg lipgloss.Color }{
 		{lipgloss.Color("#0d1117"), ColorPurple},
 		{lipgloss.Color("#0d1117"), ColorPink},
 		{lipgloss.Color("#0d1117"), ColorCyan},
 	}
 	pillRow := ""
-	if landed && p > 0.85 {
+	if tick >= pillsAt {
 		var pills []string
 		for i, trait := range s.Traits {
 			if trait == "" {
@@ -790,10 +796,10 @@ func renderPersonality(s github.Stats, anim AnimState, width int) string {
 		pillRow = strings.Join(pills, "  ")
 	}
 
-	// Outro + GIF hint (only after fully revealed)
+	// Outro + GIF hint
 	outro := ""
 	gifBox := ""
-	if landed && p > 0.9 {
+	if tick >= outroAt {
 		outro = muted("Your " + s.YearLabel + ", Unwrapped.")
 		gifBox = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
