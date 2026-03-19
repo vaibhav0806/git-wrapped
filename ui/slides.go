@@ -291,18 +291,16 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	cols := 53
 
-	// Render grid: 7 rows x cols, ██ per cell (2 chars wide)
+	// Render grid using background-colored spaces (consistent across all terminals).
+	// Block characters like █ render at inconsistent widths on some terminals.
+	cell := "  " // 2 spaces per cell
 	var gridLines []string
 	for row := 0; row < 7; row++ {
 		var rowSb strings.Builder
 		for col := 0; col < cols; col++ {
 			idx := row*53 + col
-			if idx >= totalCells {
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("██"))
-				continue
-			}
-			if idx >= revealed {
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("██"))
+			if idx >= totalCells || idx >= revealed {
+				rowSb.WriteString(lipgloss.NewStyle().Background(shades[0]).Render(cell))
 				continue
 			}
 			day := s.Calendar[idx]
@@ -322,7 +320,7 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 			if lvl > 4 {
 				lvl = 4
 			}
-			rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[lvl]).Render("██"))
+			rowSb.WriteString(lipgloss.NewStyle().Background(shades[lvl]).Render(cell))
 		}
 		gridLines = append(gridLines, rowSb.String())
 	}
@@ -331,11 +329,11 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	// Legend
 	legend := dim("less ") +
-		lipgloss.NewStyle().Foreground(shades[0]).Render("██") +
-		lipgloss.NewStyle().Foreground(shades[1]).Render("██") +
-		lipgloss.NewStyle().Foreground(shades[2]).Render("██") +
-		lipgloss.NewStyle().Foreground(shades[3]).Render("██") +
-		lipgloss.NewStyle().Foreground(shades[4]).Render("██") +
+		lipgloss.NewStyle().Background(shades[0]).Render(cell) +
+		lipgloss.NewStyle().Background(shades[1]).Render(cell) +
+		lipgloss.NewStyle().Background(shades[2]).Render(cell) +
+		lipgloss.NewStyle().Background(shades[3]).Render(cell) +
+		lipgloss.NewStyle().Background(shades[4]).Render(cell) +
 		dim(" more")
 
 	streak := ""
