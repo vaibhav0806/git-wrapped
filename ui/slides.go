@@ -283,7 +283,7 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	h := heading("CONTRIBUTION HEATMAP", ColorGreen)
 
-	// Total contributions as a big number
+	// Total contributions
 	totalCount := CounterAnimation(s.TotalContributions, p)
 	totalLine := bold(fmt.Sprintf("%d", totalCount), ColorGreen) + dim(" contributions in the last year")
 
@@ -292,7 +292,7 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	// GitHub-style green shades
 	shades := [5]lipgloss.Color{
-		lipgloss.Color("#21262d"), // 0: empty (visible against #161b22 panel bg)
+		lipgloss.Color("#21262d"), // 0: empty
 		lipgloss.Color("#0e4429"), // 1: low
 		lipgloss.Color("#006d32"), // 2: med
 		lipgloss.Color("#26a641"), // 3: high
@@ -301,40 +301,18 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	cols := 53
 
-	// Month labels across top — check row 0 dates for month boundaries
-	var monthLine strings.Builder
-	lastMonth := -1
-	for col := 0; col < cols; col++ {
-		idx := col // row 0 (Sunday of each week)
-		if idx < totalCells {
-			m := int(s.Calendar[idx].Date.Month())
-			if m != lastMonth {
-				abbr := s.Calendar[idx].Date.Format("Jan")
-				if len(abbr) >= 1 {
-					monthLine.WriteString(string(abbr[0]))
-				}
-				lastMonth = m
-			} else {
-				monthLine.WriteString(" ")
-			}
-		} else {
-			monthLine.WriteString(" ")
-		}
-	}
-	monthLabels := dim(monthLine.String())
-
-	// Render grid: 7 rows x cols
+	// Render grid: 7 rows x cols, ██ per cell (2 chars wide)
 	var gridLines []string
 	for row := 0; row < 7; row++ {
 		var rowSb strings.Builder
 		for col := 0; col < cols; col++ {
 			idx := row*53 + col
 			if idx >= totalCells {
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("█"))
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("██"))
 				continue
 			}
 			if idx >= revealed {
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("█"))
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("██"))
 				continue
 			}
 			day := s.Calendar[idx]
@@ -354,7 +332,7 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 			if lvl > 4 {
 				lvl = 4
 			}
-			rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[lvl]).Render("█"))
+			rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[lvl]).Render("██"))
 		}
 		gridLines = append(gridLines, rowSb.String())
 	}
@@ -382,18 +360,30 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 		h,
 		totalLine,
 		"",
-		monthLabels,
 		grid,
 		"",
 		legend,
 		"",
-		divider(53),
+		divider(60),
 		"",
 		streak,
 		"",
 	}, "\n")
 
-	return panel(inner, ColorGreen, width)
+	// Wider panel for heatmap to fit 53 * 2 = 106 char grid
+	boxWidth := width - 4
+	if boxWidth > 120 {
+		boxWidth = 120
+	}
+	box := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(ColorGreen).
+		Background(ColorPanel).
+		Padding(1, 4).
+		Width(boxWidth).
+		Align(lipgloss.Center).
+		Render(inner)
+	return lipgloss.NewStyle().Width(width).Align(lipgloss.Center).Render(box)
 }
 
 // ---------------------------------------------------------------------------
