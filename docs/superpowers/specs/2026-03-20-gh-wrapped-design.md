@@ -35,7 +35,7 @@ GitHub public API only. No authentication required.
 
 Slides sourced from the events API (30-day window) display "Based on your last 30 days" as a subtle footnote.
 
-**Rate limits:** 60 requests/hour unauthenticated. We need ~10-20 requests per user (events API is paginated at up to 100/page, repos can span multiple pages). Running the tool more than 3x in quick succession may hit the limit. If `GITHUB_TOKEN` is set in the environment, we silently use it for higher rate limits (5,000/hr) and private repo access — but we never prompt for it.
+**Rate limits:** 60 requests/hour unauthenticated. We need ~10-20 requests per user (events API paginated at up to 100/page, repos use `per_page=100` to minimize requests). Running the tool more than 3x in quick succession may hit the limit. If `GITHUB_TOKEN` is set in the environment, we silently use it for higher rate limits (5,000/hr) and private repo access — but we never prompt for it.
 
 ## Presentation Flow
 
@@ -96,6 +96,10 @@ Archetype selection priority: score each archetype 0-1 based on how strongly the
 
 Top 3 traits (from the same pool) are shown as pill badges — these are the top 3 scoring archetypes regardless of which one is primary.
 
+**Degraded mode:** In degraded mode (no calendar data), calendar-dependent archetypes (The Machine, The Weekender, The Sprinter) score 0. Personality is derived from the remaining archetypes only.
+
+**Timezone note:** Commit times from the events API are UTC. Users in non-UTC timezones may get inaccurate time-of-day classifications. This is an inherent GitHub API limitation.
+
 ## GIF Export
 
 On pressing `g` at the final slide:
@@ -104,7 +108,7 @@ On pressing `g` at the final slide:
 3. Shell out to `vhs` to render the GIF
 4. Print the output path on completion
 
-**`--auto` mode:** Plays all slides with 3-second auto-advance (30s total GIF for 10 slides), no keyboard interaction, exits cleanly after the last slide. Animations complete within the 3-second window. This is what VHS records.
+**`--auto` mode:** Plays all slides with 3-second auto-advance per slide, no keyboard interaction, exits cleanly after the last slide. GIF length varies depending on how many slides are shown (skipped slides reduce the total). Animations complete within the 3-second window. This is what VHS records.
 
 **VHS dependency:** VHS must be installed separately. If not found on `g` press, print: "VHS not found. Install with: brew install vhs" — no crash.
 
