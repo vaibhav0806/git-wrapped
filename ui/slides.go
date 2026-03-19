@@ -304,11 +304,11 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 		for col := 0; col < cols; col++ {
 			idx := row*53 + col
 			if idx >= totalCells {
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("██"))
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("█"))
 				continue
 			}
 			if idx >= revealed {
-				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("██"))
+				rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[0]).Render("█"))
 				continue
 			}
 			day := s.Calendar[idx]
@@ -328,7 +328,7 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 			if lvl > 4 {
 				lvl = 4
 			}
-			rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[lvl]).Render("██"))
+			rowSb.WriteString(lipgloss.NewStyle().Foreground(shades[lvl]).Render("█"))
 		}
 		gridLines = append(gridLines, rowSb.String())
 	}
@@ -337,10 +337,10 @@ func renderHeatmap(s github.Stats, anim AnimState, width int) string {
 
 	// Legend
 	legend := dim("less ") +
-		lipgloss.NewStyle().Foreground(shades[0]).Render("██") + " " +
-		lipgloss.NewStyle().Foreground(shades[1]).Render("██") + " " +
-		lipgloss.NewStyle().Foreground(shades[2]).Render("██") + " " +
-		lipgloss.NewStyle().Foreground(shades[3]).Render("██") + " " +
+		lipgloss.NewStyle().Foreground(shades[0]).Render("██") +
+		lipgloss.NewStyle().Foreground(shades[1]).Render("██") +
+		lipgloss.NewStyle().Foreground(shades[2]).Render("██") +
+		lipgloss.NewStyle().Foreground(shades[3]).Render("██") +
 		lipgloss.NewStyle().Foreground(shades[4]).Render("██") +
 		dim(" more")
 
