@@ -66,10 +66,12 @@ Press `g` on the last slide to export as GIF (requires [VHS](https://github.com/
 | 4 | **Most Chaotic Day** | Your busiest day with a snarky comment |
 | 5 | **When You Code** | Commit time distribution — Night Owl, Early Bird, or 9-to-5er |
 | 6 | **Top Languages** | Ranked bars with actual GitHub language colors |
-| 7 | **Villain Arc** | Your most-pushed repo — "obsessed much?" |
-| 8 | **Weekend Warrior** | What % of your commits land on weekends |
-| 9 | **The Novel** | Your longest commit message |
+| 7 | **Villain Arc** ⚡ | Your most-pushed repo — "obsessed much?" |
+| 8 | **Weekend Warrior** | Weekday vs weekend commit split |
+| 9 | **The Novel** ⚡ | Your longest commit message |
 | 10 | **Personality** | Lottery reveal of your developer archetype |
+
+> ⚡ = conditional slides. Villain Arc and The Novel depend on the GitHub Events API which only covers the last 30 days. If you primarily merge PRs through GitHub's UI (squash merge), these slides may not appear since the API doesn't include commit details for those events.
 
 ## Personality Archetypes
 
