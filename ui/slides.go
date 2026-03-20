@@ -634,36 +634,35 @@ func renderWeekend(s github.Stats, anim AnimState, width int) string {
 	animWeekend := CounterAnimation(weekendCount, p)
 	weekdayPct := 100 - s.WeekendPercent
 
-	// Two side-by-side stat boxes
-	weekdayBox := lipgloss.NewStyle().
+	// Two side-by-side stat boxes — same size, different emphasis
+	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color("#21262d")).
 		Padding(1, 3).
 		Width(28).
-		Align(lipgloss.Center).
+		Height(7).
+		Align(lipgloss.Center)
+
+	weekdayBox := boxStyle.
+		BorderForeground(lipgloss.Color("#30363d")).
 		Render(
-			dim(fmt.Sprintf("%d", animWeekday))+"\n"+
+			muted(fmt.Sprintf("%d", animWeekday))+"\n"+
 				dim("commits")+"\n"+
 				"\n"+
-				dim(fmt.Sprintf("%.0f%%", weekdayPct*p))+"\n"+
-				dim("Mon–Fri"),
+				muted(fmt.Sprintf("%.0f%%", weekdayPct*p))+"\n"+
+				dim("Mon – Fri"),
 		)
 
-	weekendBox := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
+	weekendBox := boxStyle.
 		BorderForeground(ColorPink).
-		Padding(1, 3).
-		Width(28).
-		Align(lipgloss.Center).
 		Render(
 			bold(fmt.Sprintf("%d", animWeekend), ColorPink)+"\n"+
 				bold("commits", ColorPink)+"\n"+
 				"\n"+
 				bold(fmt.Sprintf("%.0f%%", s.WeekendPercent*p), ColorPink)+"\n"+
-				muted("Sat–Sun"),
+				muted("Sat – Sun"),
 		)
 
-	boxes := lipgloss.JoinHorizontal(lipgloss.Center, weekdayBox, "    ", weekendBox)
+	boxes := lipgloss.JoinHorizontal(lipgloss.Center, weekdayBox, "  ", weekendBox)
 
 	var verdict string
 	switch {
