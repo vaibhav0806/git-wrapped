@@ -617,24 +617,12 @@ func renderWeekend(s github.Stats, anim AnimState, width int) string {
 
 	h := heading("WEEKEND WARRIOR", ColorPink)
 
-	animPct := s.WeekendPercent * p
-
-	// Percentage as highlighted pill
-	pctPill := lipgloss.NewStyle().
-		Background(ColorPink).
-		Foreground(lipgloss.Color("#0d1117")).
-		Bold(true).
-		Padding(0, 3).
-		Render(fmt.Sprintf(" %.0f%% ", animPct))
-
-	pctLine := muted("of your commits land on weekends")
-
 	// Compute actual counts
 	weekdayCount, weekendCount := 0, 0
 	for _, d := range s.Calendar {
 		if d.Count > 0 {
 			wd := d.Date.Weekday()
-			if wd == 0 || wd == 6 { // Sun or Sat
+			if wd == 0 || wd == 6 {
 				weekendCount += d.Count
 			} else {
 				weekdayCount += d.Count
@@ -642,9 +630,40 @@ func renderWeekend(s github.Stats, anim AnimState, width int) string {
 		}
 	}
 
-	countsLine := dim(fmt.Sprintf("%d weekday", CounterAnimation(weekdayCount, p))) +
-		muted("  ·  ") +
-		bold(fmt.Sprintf("%d weekend", CounterAnimation(weekendCount, p)), ColorPink)
+	animWeekday := CounterAnimation(weekdayCount, p)
+	animWeekend := CounterAnimation(weekendCount, p)
+	weekdayPct := 100 - s.WeekendPercent
+
+	// Two side-by-side stat boxes
+	weekdayBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("#21262d")).
+		Padding(1, 3).
+		Width(28).
+		Align(lipgloss.Center).
+		Render(
+			dim(fmt.Sprintf("%d", animWeekday))+"\n"+
+				dim("commits")+"\n"+
+				"\n"+
+				dim(fmt.Sprintf("%.0f%%", weekdayPct*p))+"\n"+
+				dim("Mon–Fri"),
+		)
+
+	weekendBox := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(ColorPink).
+		Padding(1, 3).
+		Width(28).
+		Align(lipgloss.Center).
+		Render(
+			bold(fmt.Sprintf("%d", animWeekend), ColorPink)+"\n"+
+				bold("commits", ColorPink)+"\n"+
+				"\n"+
+				bold(fmt.Sprintf("%.0f%%", s.WeekendPercent*p), ColorPink)+"\n"+
+				muted("Sat–Sun"),
+		)
+
+	boxes := lipgloss.JoinHorizontal(lipgloss.Center, weekdayBox, "    ", weekendBox)
 
 	var verdict string
 	switch {
@@ -660,15 +679,9 @@ func renderWeekend(s github.Stats, anim AnimState, width int) string {
 		"",
 		h,
 		"",
+		boxes,
 		"",
-		pctPill,
-		pctLine,
-		"",
-		divider(50),
-		"",
-		countsLine,
-		"",
-		divider(50),
+		divider(60),
 		"",
 		italic(verdict),
 		"",
