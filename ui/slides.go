@@ -629,18 +629,6 @@ func renderWeekend(s github.Stats, anim AnimState, width int) string {
 
 	pctLine := muted("of your commits land on weekends")
 
-	// Horizontal bar using background-colored spaces
-	barWidth := 50
-	weekendW := int(float64(barWidth) * animPct / 100.0)
-	if weekendW < 0 {
-		weekendW = 0
-	}
-	weekdayW := barWidth - weekendW
-
-	weekdayBar := lipgloss.NewStyle().Background(lipgloss.Color("#21262d")).Render(strings.Repeat(" ", weekdayW))
-	weekendBar := lipgloss.NewStyle().Background(ColorPink).Render(strings.Repeat(" ", weekendW))
-	bar := weekdayBar + weekendBar
-
 	// Compute actual counts
 	weekdayCount, weekendCount := 0, 0
 	for _, d := range s.Calendar {
@@ -676,7 +664,7 @@ func renderWeekend(s github.Stats, anim AnimState, width int) string {
 		pctPill,
 		pctLine,
 		"",
-		bar,
+		divider(50),
 		"",
 		countsLine,
 		"",
